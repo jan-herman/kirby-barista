@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.3] - 2023-08-12
+### Added
+- error handling to render & renderToString methods
+
+
 ## [1.0.2] - 2023-08-12
 ### Fixed
 - version mismatch in composer.json

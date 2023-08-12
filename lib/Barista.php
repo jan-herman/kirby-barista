@@ -10,18 +10,23 @@ use Kirby\Toolkit\Dir;
 use Latte\Engine as LatteEngine;
 use Latte\Essential\TranslatorExtension;
 use Latte\Bridges\Tracy\TracyExtension;
+use Tracy\Debugger;
 
 class Barista
 {
     protected static $instance;
 
     protected $kirby;
+    protected $is_localhost;
+    protected $is_tracy_installed;
     protected $latte;
     protected $temp_directory;
 
     private function __construct(Kirby $kirby)
     {
         $this->kirby = $kirby;
+        $this->is_localhost = $kirby->environment()->isLocal();
+        $this->is_tracy_installed = class_exists('Tracy\Debugger');
 
         $this->temp_directory = $this->setTempDirectory();
         $this->checkTempDirectory();
@@ -39,7 +44,7 @@ class Barista
         $this->latte->addExtension($translator_extension);
 
         // Add Extension - Tracy
-        if (class_exists('Tracy\Debugger')) {
+        if ($this->is_tracy_installed) {
             $this->latte->addExtension(new TracyExtension);
         }
 
@@ -89,11 +94,33 @@ class Barista
 
     public function render(string $view, array $data = []): void
     {
-        $this->latte->render($view, $data);
+        try {
+			$this->latte->render($view, $data);
+		} catch (Exception $e) {
+            if ($this->is_localhost) {
+                throw $e;
+            } else {
+                if ($this->is_tracy_installed) {
+                    Debugger::log($e, Debugger::ERROR);
+                }
+                return;
+            }
+		}
     }
 
     public function renderToString(string $view, array $data = []): string
     {
-        return $this->latte->renderToString($view, $data);
+        try {
+			return $this->latte->renderToString($view, $data);
+		} catch (Exception $e) {
+            if ($this->is_localhost) {
+                throw $e;
+            } else {
+                if ($this->is_tracy_installed) {
+                    Debugger::log($e, Debugger::ERROR);
+                }
+                return '';
+            }
+		}
     }
 }
