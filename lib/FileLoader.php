@@ -2,33 +2,33 @@
 
 namespace JanHerman\Barista;
 
-use Latte\Loaders;
+use Latte\Loaders\FileLoader as DefaultFileLoader;
 
-class FileLoader extends Loaders\FileLoader
+class FileLoader extends DefaultFileLoader
 {
     protected ?array $aliases = null;
+
+    public function __construct(?string $baseDir = null)
+	{
+        parent::__construct($baseDir);
+
+        $aliases = option('jan-herman.barista.pathAliases');
+
+        if ($aliases) {
+            $keys = array_map('strlen', array_keys($aliases));
+            array_multisort($keys, SORT_DESC, $aliases);
+
+            $this->aliases = $aliases;
+        }
+	}
 
     /**
 	 * Parses file path & resolves aliases
 	 */
     public function resolveAliases(string $file): string
     {
-        if ($this->aliases === []) {
+        if (!$this->aliases) {
             return $file;
-        }
-
-        if ($this->aliases === null) {
-            $aliases = option('jan-herman.barista.pathAliases');
-
-            if (!$aliases) {
-                $this->aliases = [];
-                return $file;
-            }
-
-            $keys = array_map('strlen', array_keys($aliases));
-            array_multisort($keys, SORT_DESC, $aliases);
-
-            $this->aliases = $aliases;
         }
 
         foreach ($this->aliases as $search => $replace) {
@@ -48,10 +48,6 @@ class FileLoader extends Loaders\FileLoader
 	{
         $file = $this->resolveAliases($file);
 
-		if ($this->baseDir || !preg_match('#/|\\\\|[a-z][a-z0-9+.-]*:#iA', $file)) {
-			$file = $this->normalizePath($referringFile . '/../' . $file);
-		}
-
-		return $file;
+		return parent::getReferredName($file, $referringFile);
 	}
 }

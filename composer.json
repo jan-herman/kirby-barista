@@ -4,6 +4,7 @@
     "version": "1.0.0",
     "type": "kirby-plugin",
     "license": "MIT",
+    "homepage": "https://github.com/jan-herman/kirby-barista",
     "authors": [
         {
             "name": "Jan Herman",

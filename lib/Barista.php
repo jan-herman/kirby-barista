@@ -10,7 +10,6 @@ use Kirby\Toolkit\Dir;
 use Latte\Engine as LatteEngine;
 use Latte\Essential\TranslatorExtension;
 use Latte\Bridges\Tracy\TracyExtension;
-// use Latte\Macros\MacroSet;
 
 class Barista
 {
@@ -30,10 +29,8 @@ class Barista
         // Init Latte
         $this->latte = new LatteEngine;
 
-        // Register custom filters & functions
-        $this->setFilters();
-        $this->setFunctions();
-        // $this->setMacros();
+        // Register custom tags, filters & functions
+        $this->latte->addExtension(new LatteExtension);
 
         // Add Extension - Translator
         $lang = $this->kirby->language()->code();
@@ -60,14 +57,10 @@ class Barista
 
     protected function setTempDirectory(): string
     {
-        $path = option('jan-herman.barista.tempDirectory');
+        $path = option('jan-herman.barista.tempDirectory', $this->kirby->root('cache') . '/barista');
 
         if (is_callable($path) === true) {
             return $path();
-        }
-
-        if (empty($path) === true) {
-            return $this->kirby->root('cache') . '/temp';
         }
 
         return $path;
@@ -83,33 +76,6 @@ class Barista
             }
         }
     }
-
-    protected function setFilters(): void
-    {
-        foreach (option('jan-herman.barista.filters', []) as $filter => $callback) {
-            $this->addFilter($filter, $callback);
-        }
-    }
-
-    protected function setFunctions(): void
-    {
-        foreach (option('jan-herman.barista.functions', []) as $function => $callback) {
-            $this->addFunction($function, $callback);
-        }
-    }
-
-    /* protected function setMacros(): void
-    {
-        $macros = option('jan-herman.barista.macros', []);
-
-        if (empty($macros) === false) {
-            $set = new MacroSet($this->latte->getCompiler());
-
-            foreach (option('jan-herman.barista.macros', []) as $macro) {
-                $set->addMacro(...$macro);
-            }
-        }
-    } */
 
     protected function addFilter(string $name, callable $callback): void
     {

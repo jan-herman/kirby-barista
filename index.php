@@ -19,7 +19,7 @@ Kirby::plugin('jan-herman/barista', [
         'pathAliases' => null,
         'filters' => [],
         'functions' => [],
-        // 'macros' => [],
+        'tags' => [],
     ],
     'components' => [
         'template' => function (Kirby $kirby, string $name, string $contentType = null) {
