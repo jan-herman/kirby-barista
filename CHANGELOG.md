@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.2] - 2023-08-12
+### Fixed
+- version mismatch in composer.json
+
+
 ## [1.0.1] - 2023-08-12
 ### Changed
 - refactoring
