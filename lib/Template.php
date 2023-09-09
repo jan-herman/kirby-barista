@@ -3,25 +3,20 @@
 namespace JanHerman\Barista;
 
 use Exception;
-use Kirby\Cms\App as Kirby;
-use Kirby\Cms\Template as KirbyTemplate;
+use Kirby\Cms\App;
+use Kirby\Template\Template as DefaultTemplate;
 use Kirby\Exception\Exception as KirbyException;
-use Kirby\Toolkit\F;
+use Kirby\Filesystem\F;
 use Kirby\Toolkit\Tpl;
 use Throwable;
 
-class Template extends KirbyTemplate
+class Template extends DefaultTemplate
 {
-    protected $kirby;
-    protected $barista;
     protected $templatesDirectory;
 
-    public function __construct(Kirby $kirby, string $name, string $type = 'html', string $defaultType = 'html')
+    public function __construct(string $name, string $type = 'html', string $defaultType = 'html')
     {
         parent::__construct($name, $type, $defaultType);
-
-        $this->kirby = $kirby;
-        $this->barista = Barista::getInstance($kirby);
         $this->templatesDirectory = $this->getTemplatesDirectory();
     }
 
@@ -33,7 +28,7 @@ class Template extends KirbyTemplate
     public function render(array $data = []): string
     {
         if ($this->hasDefaultType() === true) {
-            $html = $this->barista->renderToString($this->file(), $data);
+            $html = barista()->renderToString($this->file(), $data);
         } else {
             try {
                 $html = Tpl::load($this->file(), $data);
@@ -61,7 +56,7 @@ class Template extends KirbyTemplate
             }
 
             // Look for the default template provided by an extension.
-            $path = $this->kirby->extension($this->store(), $this->name());
+            $path = App::instance()->extension($this->store(), $this->name());
 
             if ($path !== null) {
                 return $path;
@@ -81,11 +76,11 @@ class Template extends KirbyTemplate
         } catch (Exception $e) {
             // Look for the template with type extension provided by an extension.
             // This might be null if the template does not exist.
-            $fallback = $this->kirby->extension($this->store(), $name);
+            $fallback = App::instance()->extension($this->store(), $name);
 
             // fallback null with provided extension, set header as default type instead extension
             if ($fallback === null) {
-                $this->kirby->response()->type($this->defaultType());
+                App::instance()->response()->type($this->defaultType());
             }
 
             return $fallback;
@@ -118,7 +113,7 @@ class Template extends KirbyTemplate
                 return $path();
             }
 
-            $path = $this->kirby->root() . '/' . $path;
+            $path = App::instance()->root() . '/' . $path;
         }
 
         if (empty($path) === true) {

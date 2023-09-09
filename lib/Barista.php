@@ -2,14 +2,17 @@
 
 namespace JanHerman\Barista;
 
+use JanHerman\Barista\LatteExtension;
+
 use Exception;
 use Kirby\Cms\App as Kirby;
 use Kirby\Exception\Exception as KirbyException;
-use Kirby\Toolkit\Dir;
+use Kirby\Filesystem\Dir;
 
 use Latte\Engine as LatteEngine;
 use Latte\Essential\TranslatorExtension;
 use Latte\Bridges\Tracy\TracyExtension;
+
 use Tracy\Debugger;
 
 class Barista
@@ -35,7 +38,7 @@ class Barista
         $this->latte = new LatteEngine;
 
         // Register custom tags, filters & functions
-        $this->latte->addExtension(new LatteExtension);
+        $this->latte->addExtension(new LatteExtension());
 
         // Add Extension - Translator
         $lang = $this->kirby->language()->code();
@@ -45,7 +48,7 @@ class Barista
 
         // Add Extension - Tracy
         if ($this->is_tracy_installed) {
-            $this->latte->addExtension(new TracyExtension);
+            $this->latte->addExtension(new TracyExtension());
         }
 
         // Set custom file loader

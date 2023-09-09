@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.0] - 2023-09-19
+### Added
+- Merx compatibility
+
+### Removed
+- $kirby & $barista atributes from Template class
+
+### Fixed
+- missing type definitions
+
+
 ## [1.0.3] - 2023-08-12
 ### Added
 - error handling to render & renderToString methods

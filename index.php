@@ -6,6 +6,7 @@ use JanHerman\Barista\Template;
 use Kirby\Cms\App as Kirby;
 use Kirby\Template\Snippet;
 
+use Kirby\Toolkit\Str;
 use Kirby\Sane\Html as SaneHtml;
 use Latte\Runtime\Html;
 
@@ -22,8 +23,8 @@ Kirby::plugin('jan-herman/barista', [
         'tags' => [],
     ],
     'components' => [
-        'template' => function (Kirby $kirby, string $name, string $contentType = null) {
-            return new Template($kirby, $name, $contentType);
+        'template' => function (Kirby $kirby, string $name, string $content_type = null) {
+            return new Template($name, $content_type);
         },
         'snippet' => function (Kirby $kirby, string $name, array $data = [], bool $slots = false): Snippet|string {
             $file = Snippet::file($name);
