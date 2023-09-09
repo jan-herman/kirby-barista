@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.1] - 2023-08-12
+### Fixed
+- version mismatch in composer.json
+
+
 ## [1.1.0] - 2023-09-19
 ### Added
 - Merx compatibility
