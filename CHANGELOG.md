@@ -1,6 +1,11 @@
 # Changelog
 
-## [1.1.1] - 2023-08-12
+## [1.2.0] - 2023-09-12
+### Changed
+- Template.php simplification
+
+
+## [1.1.1] - 2023-09-19
 ### Fixed
 - version mismatch in composer.json
 

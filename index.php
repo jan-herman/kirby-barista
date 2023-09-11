@@ -15,7 +15,6 @@ use Latte\Runtime\Html;
 Kirby::plugin('jan-herman/barista', [
     'options' => [
         'autoRefresh' => true,
-        'templatesDirectory' => null,
         'tempDirectory' => null,
         'pathAliases' => null,
         'filters' => [],
