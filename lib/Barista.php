@@ -22,8 +22,8 @@ class Barista
     protected $kirby;
     protected $is_localhost;
     protected $is_tracy_installed;
-    protected $latte;
     protected $temp_directory;
+    protected $latte;
 
     private function __construct(Kirby $kirby)
     {
@@ -35,7 +35,7 @@ class Barista
         $this->checkTempDirectory();
 
         // Init Latte
-        $this->latte = new LatteEngine;
+        $this->latte = new LatteEngine();
 
         // Register custom tags, filters & functions
         $this->latte->addExtension(new LatteExtension());
@@ -56,6 +56,9 @@ class Barista
 
         // Set temp directory
         $this->latte->setTempDirectory($this->temp_directory);
+
+        // Kirby hook
+        $this->latte = $kirby->apply('jan-herman.barista.init:after', ['latte' => $this->latte], 'latte');
     }
 
     public static function getInstance(Kirby $kirby)
@@ -85,21 +88,11 @@ class Barista
         }
     }
 
-    protected function addFilter(string $name, callable $callback): void
-    {
-        $this->latte->addFilter($name, $callback);
-    }
-
-    protected function addFunction(string $name, callable $callback): void
-    {
-        $this->latte->addFunction($name, $callback);
-    }
-
-    public function render(string $view, array $data = []): void
+    public function render(string $file, array $data = []): void
     {
         try {
-			$this->latte->render($view, $data);
-		} catch (Exception $e) {
+            $this->latte->render($file, $data);
+        } catch (Exception $e) {
             if ($this->is_localhost) {
                 throw $e;
             } else {
@@ -108,14 +101,14 @@ class Barista
                 }
                 return;
             }
-		}
+        }
     }
 
-    public function renderToString(string $view, array $data = []): string
+    public function renderToString(string $file, array $data = []): string
     {
         try {
-			return $this->latte->renderToString($view, $data);
-		} catch (Exception $e) {
+            return $this->latte->renderToString($file, $data);
+        } catch (Exception $e) {
             if ($this->is_localhost) {
                 throw $e;
             } else {
@@ -124,6 +117,6 @@ class Barista
                 }
                 return '';
             }
-		}
+        }
     }
 }

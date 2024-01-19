@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.0] - 2024-01-19
+### Added
+- 'jan-herman.barista.init:after' hook to expose `$barista->latte`
+- support for callable in path aliases
+    - i.e. '@snippets' => function ($name) { ... } where $name is the rest of the string after the alias and the following  slash
+- option to omit '.latte' extension when using path alias
+
+### Removed
+- `addFilter` & `addFunction` methods
+
+
 ## [1.2.0] - 2023-09-12
 ### Changed
 - Template.php simplification

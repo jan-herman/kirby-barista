@@ -45,8 +45,7 @@ Kirby::plugin('jan-herman/barista', [
         ]
     ],
     'fieldMethods' => [
-        'toHtml' => function ($field): string|Html
-        {
+        'toHtml' => function ($field): string|Html {
             if ($field->isEmpty()) {
                 return '';
             }
@@ -57,7 +56,8 @@ Kirby::plugin('jan-herman/barista', [
     ]
 ]);
 
-function barista() {
+function barista()
+{
     $kirby = kirby();
     return Barista::getInstance($kirby);
 }
