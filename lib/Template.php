@@ -12,7 +12,7 @@ class Template extends DefaultTemplate
         if (Str::endsWith($this->file(), '.latte')) {
             return barista()->renderToString($this->file(), $data);
         } else {
-            return parent::render();
+            return parent::render($data);
         }
     }
 

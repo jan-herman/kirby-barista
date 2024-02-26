@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.1] - 2024-02-04
+### Fixed
+- Template's render function wasn't passing data to it's parent. Causing errors in non latte templates.
+
+
 ## [1.3.0] - 2024-01-19
 ### Added
 - 'jan-herman.barista.init:after' hook to expose `$barista->latte`
