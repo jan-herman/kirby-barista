@@ -66,6 +66,11 @@ class Barista
         return self::$instance ??= new self($kirby);
     }
 
+    public function getEngine(): LatteEngine
+    {
+        return $this->latte;
+    }
+
     protected function setTempDirectory(): string
     {
         $path = option('jan-herman.barista.tempDirectory', $this->kirby->root('cache') . '/barista');

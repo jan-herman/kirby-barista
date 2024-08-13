@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.0] - 2024-08-13
+### Added
+- $barista->getEngine() method
+
+
 ## [1.3.1] - 2024-02-04
 ### Fixed
 - Template's render function wasn't passing data to it's parent. Causing errors in non latte templates.
