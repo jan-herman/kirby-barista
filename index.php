@@ -51,6 +51,7 @@ Kirby::plugin('jan-herman/barista', [
             }
 
             $safe_html = SaneHtml::sanitize($field->value);
+            $safe_html = str_replace('&amp;nbsp;', '&nbsp;', $safe_html);
             return new Html($safe_html);
         }
     ]

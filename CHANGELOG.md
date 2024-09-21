@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.1] - 2024-09-21
+### Fixed
+- $field->toHtml() method doesn't escape non-breakable spaces any more
+
+
 ## [1.4.0] - 2024-08-13
 ### Added
 - $barista->getEngine() method
