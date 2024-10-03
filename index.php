@@ -26,7 +26,14 @@ Kirby::plugin('jan-herman/barista', [
             return new Template($name, $content_type);
         },
         'snippet' => function (Kirby $kirby, string $name, array $data = [], bool $slots = false): Snippet|string {
-            $file = Snippet::file($name);
+            $root  = Snippet::root();
+            $latte_file = $root . '/' . $name . '.latte';
+
+            if (file_exists($latte_file) === true) {
+                $file = $latte_file;
+            } else {
+                $file = Snippet::file($name);
+            }
 
             if (Str::endsWith($file, '.latte')) {
                 return barista()->renderToString($file, $data);

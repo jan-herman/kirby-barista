@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.5.0] - 2024-10-04
+### Fixed
+- support for .latte snippets (snippets weren't loaded unless defined in a plugin)
+
+
 ## [1.4.1] - 2024-09-21
 ### Fixed
 - $field->toHtml() method doesn't escape non-breakable spaces any more
