@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.0] - 2024-10-04
+### Added
+- JanHerman\Barista\Snippet class
+
+### Changed
+- snippet loader implementation (extend default snippet class)
+
+
 ## [1.5.0] - 2024-10-04
 ### Fixed
 - support for .latte snippets (snippets weren't loaded unless defined in a plugin)

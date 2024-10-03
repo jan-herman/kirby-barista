@@ -2,9 +2,9 @@
 
 use JanHerman\Barista\Barista;
 use JanHerman\Barista\Template;
+use JanHerman\Barista\Snippet;
 
 use Kirby\Cms\App as Kirby;
-use Kirby\Template\Snippet;
 
 use Kirby\Toolkit\Str;
 use Kirby\Sane\Html as SaneHtml;
@@ -26,14 +26,7 @@ Kirby::plugin('jan-herman/barista', [
             return new Template($name, $content_type);
         },
         'snippet' => function (Kirby $kirby, string $name, array $data = [], bool $slots = false): Snippet|string {
-            $root  = Snippet::root();
-            $latte_file = $root . '/' . $name . '.latte';
-
-            if (file_exists($latte_file) === true) {
-                $file = $latte_file;
-            } else {
-                $file = Snippet::file($name);
-            }
+            $file = Snippet::file($name);
 
             if (Str::endsWith($file, '.latte')) {
                 return barista()->renderToString($file, $data);
