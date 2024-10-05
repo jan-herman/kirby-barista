@@ -6,9 +6,32 @@ use Kirby\Template\Snippet as DefaultSnippet;
 
 use Kirby\Cms\App;
 use Kirby\Toolkit\A;
+use Kirby\Toolkit\Str;
 
 class Snippet extends DefaultSnippet
 {
+    /**
+     * Returns either an open snippet capturing slots
+     * or the template string for self-enclosed snippets
+     */
+    public static function factory(
+        string|array|null $name,
+        array $data = [],
+        bool $slots = false
+    ): static|string {
+        $file = $name !== null ? static::file($name) : null;
+
+        if (Str::endsWith($file, '.latte')) {
+            return barista()->renderToString($file, $data);
+        }
+
+        if ($slots === true) {
+            return static::begin($file, $data);
+        }
+
+        return static::load($file, static::scope($data));
+    }
+
     /**
      * Absolute path to the file for
      * the snippet/s taking snippets defined in plugins
