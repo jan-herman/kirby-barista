@@ -2,13 +2,19 @@
 
 namespace JanHerman\Barista;
 
+use Latte\Runtime\Html;
+
 class Translator
 {
-	public function __construct(private string $lang)
-	{}
+    private bool $escape_html;
 
-	public function translate(string $key, ...$params): string
-	{
+    public function __construct(private string $lang)
+    {
+        $this->escape_html = option('jan-herman.barista.translator.escapeHtml', true);
+    }
+
+    public function translate(string $key, ...$params): string|Html
+    {
         $fallback = isset($params['fallback']) ? $params['fallback'] : null;
         $translation = $params ? tt($key, $fallback, $params) : t($key, $fallback);
 
@@ -17,6 +23,10 @@ class Translator
             return $key;
         }
 
-		return $translation;
-	}
+        if ($this->escape_html) {
+            return $translation;
+        } else {
+            return safe_html($translation);
+        }
+    }
 }

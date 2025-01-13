@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.0] - 2025-01-13
+### Added
+- `safe_html()` helper function
+- `jan-jerman.barista.translator.escapeHtml` option (useful for static sites)
+    - defaults to `true`,
+    - when set to false, `translate` macro will return `Latte\Runtime\Html` object instead of a string
+
+
 ## [1.6.0] - 2024-10-04
 ### Added
 - JanHerman\Barista\Snippet class

@@ -19,6 +19,9 @@ Kirby::plugin('jan-herman/barista', [
         'filters' => [],
         'functions' => [],
         'tags' => [],
+        'translator' => [
+            'escapeHtml' => true
+        ],
     ],
     'components' => [
         'template' => function (Kirby $kirby, string $name, string $content_type = null) {
@@ -43,9 +46,7 @@ Kirby::plugin('jan-herman/barista', [
                 return '';
             }
 
-            $safe_html = SaneHtml::sanitize($field->value);
-            $safe_html = str_replace('&amp;nbsp;', '&nbsp;', $safe_html);
-            return new Html($safe_html);
+            return safe_html($field->value);
         }
     ]
 ]);
@@ -54,4 +55,11 @@ function barista()
 {
     $kirby = kirby();
     return Barista::getInstance($kirby);
+}
+
+function safe_html($html): Html
+{
+    $safe_html = SaneHtml::sanitize($html);
+    $safe_html = str_replace('&amp;nbsp;', '&nbsp;', $safe_html);
+    return new Html($safe_html);
 }
