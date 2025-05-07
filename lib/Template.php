@@ -16,6 +16,11 @@ class Template extends DefaultTemplate
         }
     }
 
+    public function renderBlock(string $name, array $data = []): string
+    {
+        return barista()->renderToString($this->file(), $data, $name);
+    }
+
     public function extension(): string
     {
         return 'latte';

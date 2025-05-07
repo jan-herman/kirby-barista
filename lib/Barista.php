@@ -93,10 +93,10 @@ class Barista
         }
     }
 
-    public function render(string $file, array $data = []): void
+    public function render(string $file, object|array $params = [], ?string $block = null): void
     {
         try {
-            $this->latte->render($file, $data);
+            $this->latte->render($file, $params, $block);
         } catch (Exception $e) {
             if ($this->is_localhost) {
                 throw $e;
@@ -109,10 +109,10 @@ class Barista
         }
     }
 
-    public function renderToString(string $file, array $data = []): string
+    public function renderToString(string $file, object|array $params = [], ?string $block = null): string
     {
         try {
-            return $this->latte->renderToString($file, $data);
+            return $this->latte->renderToString($file, $params, $block);
         } catch (Exception $e) {
             if ($this->is_localhost) {
                 throw $e;

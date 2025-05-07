@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.8.0] - 2025-05-07
+### Added
+- support for rendering single blocks
+- `Template->renderBlock` method
+
+
 ## [1.7.0] - 2025-01-13
 ### Added
 - `safe_html()` helper function
