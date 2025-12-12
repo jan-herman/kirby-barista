@@ -14,6 +14,7 @@ use Latte\Runtime\Html;
 Kirby::plugin('jan-herman/barista', [
     'options' => [
         'autoRefresh' => true,
+        'strictTypes' => false,
         'tempDirectory' => null,
         'pathAliases' => null,
         'filters' => [],
@@ -24,7 +25,7 @@ Kirby::plugin('jan-herman/barista', [
         ],
     ],
     'components' => [
-        'template' => function (Kirby $kirby, string $name, string $content_type = null) {
+        'template' => function (Kirby $kirby, string $name, ?string $content_type = null) {
             return new Template($name, $content_type);
         },
         'snippet' => function (Kirby $kirby, string $name, array $data = [], bool $slots = false): Snippet|string {

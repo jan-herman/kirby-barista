@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0] - 2025-12-12
+### Added
+- `strictTypes` option (defaults to false)
+    - Latte 3.1 introduced a breaking change by enabling strict types by default.
+- `autoRefresh` option (defaults to true)
+
+
 ## [1.8.0] - 2025-05-07
 ### Added
 - support for rendering single blocks

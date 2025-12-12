@@ -15,7 +15,7 @@ class Translator
 
     public function translate(string $key, ...$params): string|Html
     {
-        $fallback = isset($params['fallback']) ? $params['fallback'] : null;
+        $fallback = $params['fallback'] ?? null;
         $translation = $params ? tt($key, $fallback, $params) : t($key, $fallback);
 
         if (!$translation) {

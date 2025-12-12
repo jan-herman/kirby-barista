@@ -37,6 +37,10 @@ class Barista
         // Init Latte
         $this->latte = new LatteEngine();
 
+        // Set Options
+        $this->latte->setStrictTypes(option('jan-herman.barista.strictTypes', false));
+        $this->latte->setAutoRefresh(option('jan-herman.barista.autoRefresh', true));
+
         // Register custom tags, filters & functions
         $this->latte->addExtension(new LatteExtension());
 
