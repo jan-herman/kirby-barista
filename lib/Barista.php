@@ -40,6 +40,7 @@ class Barista
         // Set Options
         $this->latte->setStrictTypes(option('jan-herman.barista.strictTypes', false));
         $this->latte->setAutoRefresh(option('jan-herman.barista.autoRefresh', true));
+        $this->latte->setLocale($this->kirby->language()?->locale(LC_ALL) ?? option('locale', 'en_US'));
 
         // Register custom tags, filters & functions
         $this->latte->addExtension(new LatteExtension());

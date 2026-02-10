@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.10.0] - 2025-01-10
+### Added
+- automatically set Latte locale based on Kirby language (added in Latte 3.0.18, necessary for filters like localDate)
+
+
 ## [1.9.0] - 2025-12-12
 ### Added
 - `strictTypes` option (defaults to false)
