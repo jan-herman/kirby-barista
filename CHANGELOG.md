@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.11.0] - 2026-03-01
+### Changed
+- refactoring related to Latte 3.1.2
+- rename `tempDirectory` option to `cacheDirectory` (⚡ potential BC break ⚡)
+
+
 ## [1.10.0] - 2025-01-10
 ### Added
 - automatically set Latte locale based on Kirby language (added in Latte 3.0.18, necessary for filters like localDate)

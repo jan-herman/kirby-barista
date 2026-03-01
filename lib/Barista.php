@@ -10,6 +10,7 @@ use Kirby\Exception\Exception as KirbyException;
 use Kirby\Filesystem\Dir;
 
 use Latte\Engine as LatteEngine;
+use Latte\Feature;
 use Latte\Essential\TranslatorExtension;
 use Latte\Bridges\Tracy\TracyExtension;
 
@@ -22,7 +23,7 @@ class Barista
     protected $kirby;
     protected $is_localhost;
     protected $is_tracy_installed;
-    protected $temp_directory;
+    protected $cache_directory;
     protected $latte;
 
     private function __construct(Kirby $kirby)
@@ -31,14 +32,14 @@ class Barista
         $this->is_localhost = $kirby->environment()->isLocal();
         $this->is_tracy_installed = class_exists('Tracy\Debugger');
 
-        $this->temp_directory = $this->setTempDirectory();
-        $this->checkTempDirectory();
+        $this->cache_directory = $this->setCacheDirectory();
+        $this->checkCacheDirectory();
 
         // Init Latte
         $this->latte = new LatteEngine();
 
         // Set Options
-        $this->latte->setStrictTypes(option('jan-herman.barista.strictTypes', false));
+        $this->latte->setFeature(Feature::StrictTypes, option('jan-herman.barista.strictTypes', false));
         $this->latte->setAutoRefresh(option('jan-herman.barista.autoRefresh', true));
         $this->latte->setLocale($this->kirby->language()?->locale(LC_ALL) ?? option('locale', 'en_US'));
 
@@ -60,7 +61,7 @@ class Barista
         $this->latte->setLoader(new FileLoader());
 
         // Set temp directory
-        $this->latte->setTempDirectory($this->temp_directory);
+        $this->latte->setCacheDirectory($this->cache_directory);
 
         // Kirby hook
         $this->latte = $kirby->apply('jan-herman.barista.init:after', ['latte' => $this->latte], 'latte');
@@ -76,9 +77,9 @@ class Barista
         return $this->latte;
     }
 
-    protected function setTempDirectory(): string
+    protected function setCacheDirectory(): string
     {
-        $path = option('jan-herman.barista.tempDirectory', $this->kirby->root('cache') . '/barista');
+        $path = option('jan-herman.barista.cacheDirectory', $this->kirby->root('cache') . '/barista');
 
         if (is_callable($path) === true) {
             return $path();
@@ -87,13 +88,13 @@ class Barista
         return $path;
     }
 
-    protected function checkTempDirectory(): void
+    protected function checkCacheDirectory(): void
     {
-        if (Dir::exists($this->temp_directory) === false) {
+        if (Dir::exists($this->cache_directory) === false) {
             try {
-                Dir::make($this->temp_directory);
+                Dir::make($this->cache_directory);
             } catch (Exception $e) {
-                throw new KirbyException($this->temp_directory . ' directory is not writable.');
+                throw new KirbyException($this->cache_directory . ' directory is not writable.');
             }
         }
     }
