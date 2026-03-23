@@ -15,6 +15,8 @@ Kirby::plugin('jan-herman/barista', [
     'options' => [
         'autoRefresh' => true,
         'strictTypes' => false,
+        'dedent' => true,
+        'scopedLoopVariables' => true,
         'cacheDirectory' => null,
         'pathAliases' => null,
         'filters' => [],

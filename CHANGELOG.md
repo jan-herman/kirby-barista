@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.12.0] - 2026-03-23
+### Added
+- built-in latte filters
+    - `|stripNewLines`
+- `Barista->getOption()` method
+- support for features introduced in Latte 3.1.3
+    - `jan-herman.barista.dedent` option (defaults to true)
+    - `jan-herman.barista.scopedLoopVariables` option (defaults to true) (⚡ potential BC break ⚡)
+
+
 ## [1.11.0] - 2026-03-01
 ### Changed
 - refactoring related to Latte 3.1.2

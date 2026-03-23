@@ -39,8 +39,10 @@ class Barista
         $this->latte = new LatteEngine();
 
         // Set Options
-        $this->latte->setFeature(Feature::StrictTypes, option('jan-herman.barista.strictTypes', false));
-        $this->latte->setAutoRefresh(option('jan-herman.barista.autoRefresh', true));
+        $this->latte->setFeature(Feature::StrictTypes, $this->getOption('strictTypes', false));
+        $this->latte->setFeature(Feature::ScopedLoopVariables, $this->getOption('scopedLoopVariables', true));
+        $this->latte->setFeature(Feature::Dedent, $this->getOption('dedent', true));
+        $this->latte->setAutoRefresh($this->getOption('autoRefresh', true));
         $this->latte->setLocale($this->kirby->language()?->locale(LC_ALL) ?? option('locale', 'en_US'));
 
         // Register custom tags, filters & functions
@@ -77,9 +79,14 @@ class Barista
         return $this->latte;
     }
 
+    public function getOption(string $key, $default = null): mixed
+    {
+        return option('jan-herman.barista.' . $key, $default);
+    }
+
     protected function setCacheDirectory(): string
     {
-        $path = option('jan-herman.barista.cacheDirectory', $this->kirby->root('cache') . '/barista');
+        $path = $this->getOption('cacheDirectory', $this->kirby->root('cache') . '/barista');
 
         if (is_callable($path) === true) {
             return $path();
