@@ -3,28 +3,24 @@
 namespace JanHerman\Barista;
 
 use JanHerman\Barista\LatteExtension;
-
-use Exception;
 use Kirby\Cms\App as Kirby;
 use Kirby\Exception\Exception as KirbyException;
 use Kirby\Filesystem\Dir;
-
 use Latte\Engine as LatteEngine;
 use Latte\Feature;
 use Latte\Essential\TranslatorExtension;
 use Latte\Bridges\Tracy\TracyExtension;
-
 use Tracy\Debugger;
+use Exception;
 
 class Barista
 {
-    protected static $instance;
-
-    protected $kirby;
-    protected $is_localhost;
-    protected $is_tracy_installed;
-    protected $cache_directory;
-    protected $latte;
+    protected static self $instance;
+    protected Kirby $kirby;
+    protected bool $is_localhost;
+    protected bool $is_tracy_installed;
+    protected string $cache_directory;
+    protected LatteEngine $latte;
 
     private function __construct(Kirby $kirby)
     {
@@ -104,6 +100,13 @@ class Barista
                 throw new KirbyException($this->cache_directory . ' directory is not writable.');
             }
         }
+    }
+
+    public function resolvePathAlias(string $path): string
+    {
+        $file_loader = $this->latte->getLoader();
+
+        return $file_loader->resolveAliases($path);
     }
 
     public function render(string $file, object|array $params = [], ?string $block = null): void

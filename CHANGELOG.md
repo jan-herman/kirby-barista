@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.13.0] - 2026-05-27
+### Added
+- `Barista->resolvePathAlias()` method
+- missing type hints
+
+
 ## [1.12.0] - 2026-03-23
 ### Added
 - built-in latte filters
