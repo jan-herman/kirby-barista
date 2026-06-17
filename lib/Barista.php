@@ -111,24 +111,20 @@ class Barista
 
     public function render(string $file, object|array $params = [], ?string $block = null): void
     {
-        try {
-            $this->latte->render($file, $params, $block);
-        } catch (Exception $e) {
-            if ($this->is_localhost) {
-                throw $e;
-            } else {
-                if ($this->is_tracy_installed) {
-                    Debugger::log($e, Debugger::ERROR);
-                }
-                return;
-            }
-        }
+        echo $this->renderToString($file, $params, $block);
     }
 
     public function renderToString(string $file, object|array $params = [], ?string $block = null): string
     {
         try {
-            return $this->latte->renderToString($file, $params, $block);
+            $html = $this->latte->renderToString($file, $params, $block);
+
+            return $this->kirby->apply('jan-herman.barista.render:after', [
+                'block'  => $block,
+                'file'   => $file,
+                'html'   => $html,
+                'params' => $params,
+            ], 'html');
         } catch (Exception $e) {
             if ($this->is_localhost) {
                 throw $e;

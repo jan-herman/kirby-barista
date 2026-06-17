@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.14.0] - 2026-06-16
+### Added
+- `jan-herman.barista.render:after` hook
+
+
 ## [1.13.0] - 2026-05-27
 ### Added
 - `Barista->resolvePathAlias()` method
