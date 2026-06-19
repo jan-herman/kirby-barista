@@ -18,6 +18,8 @@ Kirby::plugin('jan-herman/barista', [
         'dedent' => true,
         'scopedLoopVariables' => true,
         'cacheDirectory' => null,
+        'implicitEmbedBlock' => true,
+        'implicitEmbedBlockName' => 'default',
         'pathAliases' => null,
         'filters' => [],
         'functions' => [],

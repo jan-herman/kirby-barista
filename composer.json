@@ -1,7 +1,7 @@
 {
     "name": "jan-herman/kirby-barista",
     "description": "Enable Latte Template Engine for Kirby CMS",
-    "version": "1.14.0",
+    "version": "1.15.0",
     "type": "kirby-plugin",
     "license": "MIT",
     "homepage": "https://github.com/jan-herman/kirby-barista",
@@ -25,6 +25,9 @@
         "allow-plugins": {
             "getkirby/composer-installer": true
         }
+    },
+    "scripts": {
+        "test": "php tests/ImplicitEmbedBlockTest.php"
     },
     "autoload": {
         "psr-4": {

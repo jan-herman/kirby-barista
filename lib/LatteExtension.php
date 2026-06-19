@@ -2,6 +2,11 @@
 
 namespace JanHerman\Barista;
 
+use Generator;
+use JanHerman\Barista\Latte\Nodes\EmbedNode;
+use Latte\Compiler\Tag;
+use Latte\Compiler\TemplateParser;
+use Latte\Engine;
 use Latte\Extension;
 use Latte\Runtime\FilterInfo;
 
@@ -9,7 +14,25 @@ class LatteExtension extends Extension
 {
     public function getTags(): array
     {
-        return option('jan-herman.barista.tags', []);
+        $tags = [];
+
+        if (option('jan-herman.barista.implicitEmbedBlock', true) !== false) {
+            $block_name = option('jan-herman.barista.implicitEmbedBlockName', 'default');
+
+            $tags['embed'] = function (Tag $tag, TemplateParser $parser) use ($block_name): Generator {
+                return yield from EmbedNode::createWithImplicitBlock($tag, $parser, $block_name);
+            };
+        }
+
+        return array_merge($tags, option('jan-herman.barista.tags', []));
+    }
+
+    public function getCacheKey(Engine $engine): mixed
+    {
+        return [
+            'implicitEmbedBlock' => option('jan-herman.barista.implicitEmbedBlock', true),
+            'implicitEmbedBlockName' => option('jan-herman.barista.implicitEmbedBlockName', 'default'),
+        ];
     }
 
     public function getFilters(): array

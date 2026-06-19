@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0] - 2026-06-18
+### Added
+- Experimental: implicit default block support for loose content inside `{embed}{/embed}`
+    - `jan-herman.barista.implicitEmbedBlock` option (defaults to true)
+    - `jan-herman.barista.implicitEmbedBlockName` option (defaults to `default`)
+
+
 ## [1.14.0] - 2026-06-16
 ### Added
 - `jan-herman.barista.render:after` hook
