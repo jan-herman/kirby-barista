@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.2] - 2026-06-21
+### Changed
+- trim leading and trailing whitespace around implicit `{embed}` default block content
+- preserve whitespace between meaningful loose content nodes inside `{embed}`
+- improve error message when loose `{embed}` content is combined with an explicit implicit block
+
+
 ## [1.15.1] - 2026-06-21
 ### Fixed
 - path alias resolution (added path normalization)

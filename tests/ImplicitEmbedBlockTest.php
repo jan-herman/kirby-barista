@@ -141,6 +141,24 @@ assertSameValue(
 );
 
 assertSameValue(
+    'outer whitespace around loose content is trimmed',
+    '<section><p>Hello</p></section>',
+    renderTemplate(
+        "{embed file \"component\"}\n    <p>Hello</p>\n{/embed}",
+        '<section>{block default}Fallback{/block}</section>',
+    ),
+);
+
+assertSameValue(
+    'whitespace between loose content nodes is preserved',
+    '<section><span>One</span> <span>Two</span></section>',
+    renderTemplate(
+        "{embed file \"component\"}\n    <span>One</span> <span>Two</span>\n{/embed}",
+        '<section>{block default}Fallback{/block}</section>',
+    ),
+);
+
+assertSameValue(
     'whitespace-only embed content is ignored',
     '<section>Fallback</section>',
     renderTemplate(
@@ -202,10 +220,21 @@ assertSameValue(
 
 assertThrows(
     'explicit same-name block plus loose content throws',
-    "Cannot redeclare block 'default'",
+    'Cannot combine loose content with an explicit {block default} inside {embed}; both define the default block',
     fn() => renderTemplate(
         '{embed file "component"}Y{block default}Z{/block}{/embed}',
         '<section>{block default}Fallback{/block}</section>',
+    ),
+);
+
+assertThrows(
+    'explicit configured-name block plus loose content throws configured-name error',
+    'Cannot combine loose content with an explicit {block content} inside {embed}; both define the content block',
+    fn() => renderTemplate(
+        '{embed file "component"}Y{block content}Z{/block}{/embed}',
+        '<section>{block content}Fallback{/block}</section>',
+        [],
+        ['implicitEmbedBlockName' => 'content'],
     ),
 );
 

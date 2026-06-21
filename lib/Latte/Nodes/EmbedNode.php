@@ -18,8 +18,11 @@ use Latte\Essential\Nodes\BlockNode;
 use Latte\Essential\Nodes\EmbedNode as LatteEmbedNode;
 use Latte\Essential\Nodes\ImportNode;
 
+use function array_pop;
+use function array_shift;
 use function array_splice;
 use function count;
+use function end;
 use function preg_match;
 use function trim;
 
@@ -88,7 +91,6 @@ class EmbedNode extends LatteEmbedNode
         $children = [];
         $loose_content = [];
         $insert_at = null;
-        $has_meaningful_content = false;
 
         foreach ($node->blocks->children as $child) {
             if ($child instanceof ImportNode || $child instanceof BlockNode) {
@@ -98,19 +100,36 @@ class EmbedNode extends LatteEmbedNode
 
             $insert_at ??= count($children);
             $loose_content[] = $child;
-
-            if (!$child instanceof TextNode || !$child->isWhitespace()) {
-                $has_meaningful_content = true;
-            }
         }
 
-        if (!$has_meaningful_content) {
+        self::trimOuterWhitespace($loose_content);
+
+        if (!$loose_content) {
             return;
+        }
+
+        if (isset($parser->blocks[$node->layer][$block_name])) {
+            throw new CompileException(
+                "Cannot combine loose content with an explicit {block $block_name} inside {embed}; both define the $block_name block.",
+                $loose_content[0]->position ?? $embed_tag->position,
+            );
         }
 
         $block = self::createImplicitBlock($loose_content, $parser, $embed_tag, $block_name, $node->layer);
         array_splice($children, $insert_at ?? 0, 0, [$block]);
         $node->blocks->children = $children;
+    }
+
+    /** @param AreaNode[] $content */
+    private static function trimOuterWhitespace(array &$content): void
+    {
+        while ($content && $content[0] instanceof TextNode && $content[0]->isWhitespace()) {
+            array_shift($content);
+        }
+
+        while ($content && ($last = end($content)) instanceof TextNode && $last->isWhitespace()) {
+            array_pop($content);
+        }
     }
 
     /** @param AreaNode[] $content */
