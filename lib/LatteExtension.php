@@ -4,6 +4,7 @@ namespace JanHerman\Barista;
 
 use Generator;
 use JanHerman\Barista\Latte\Nodes\EmbedNode;
+use JanHerman\Barista\Latte\Passes\ImplicitLayoutBlockPass;
 use Latte\Compiler\Tag;
 use Latte\Compiler\TemplateParser;
 use Latte\Engine;
@@ -27,11 +28,24 @@ class LatteExtension extends Extension
         return array_merge($tags, option('jan-herman.barista.tags', []));
     }
 
+    public function getPasses(): array
+    {
+        if (option('jan-herman.barista.implicitLayoutBlock', false) === false) {
+            return [];
+        }
+
+        return [
+            'implicitLayoutBlock' => new ImplicitLayoutBlockPass(option('jan-herman.barista.implicitLayoutBlockName', 'default')),
+        ];
+    }
+
     public function getCacheKey(Engine $engine): mixed
     {
         return [
             'implicitEmbedBlock' => option('jan-herman.barista.implicitEmbedBlock', true),
             'implicitEmbedBlockName' => option('jan-herman.barista.implicitEmbedBlockName', 'default'),
+            'implicitLayoutBlock' => option('jan-herman.barista.implicitLayoutBlock', false),
+            'implicitLayoutBlockName' => option('jan-herman.barista.implicitLayoutBlockName', 'default'),
         ];
     }
 
