@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.15.1] - 2026-06-21
+### Fixed
+- path alias resolution (added path normalization)
+    - ⚡ potential BC break: `FileLoader::resolveAliases` method was renamed to `FileLoader::resolvePathAlias`
+
+
 ## [1.15.0] - 2026-06-18
 ### Added
 - Experimental: implicit default block support for loose content inside `{embed}{/embed}`

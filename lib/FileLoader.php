@@ -2,7 +2,9 @@
 
 namespace JanHerman\Barista;
 
+use Kirby\Filesystem\F;
 use Latte\Loaders\FileLoader as DefaultFileLoader;
+use const DIRECTORY_SEPARATOR;
 
 class FileLoader extends DefaultFileLoader
 {
@@ -25,36 +27,55 @@ class FileLoader extends DefaultFileLoader
     /**
      * Parses file path & resolves aliases
      */
-    public function resolveAliases(string $file): string
+    public function resolvePathAlias(string $file): string
     {
         if (!$this->aliases) {
             return $file;
         }
 
         foreach ($this->aliases as $search => $replace) {
-            if (str_starts_with($file, $search)) {
-
-                // replace alias with full path
-                if (is_string($replace)) {
-                    $file = substr_replace($file, $replace, 0, strlen($search));
-                } elseif (is_callable($replace)) {
-                    $name = substr($file, strlen($search) + 1);
-                    $file = $replace($name);
-                    if (!$file) {
-                        return $search . '/' . $name;
-                    }
-                }
-
-                // add .latte extension if it's not present
-                if (pathinfo($file, PATHINFO_EXTENSION) === '') {
-                    $file .= '.latte';
-                }
-
+            if (!str_starts_with($file, $search)) {
                 continue;
+            }
+
+            $relativePath = ltrim(substr($file, strlen($search)), '/\\');
+
+            if (is_string($replace)) {
+                return $this->withDefaultExtension(
+                    static::normalizePath($this->joinPath($replace, $relativePath))
+                );
+            } elseif (is_callable($replace)) {
+                $file = $replace($relativePath);
+
+                if (!$file) {
+                    return $search . DIRECTORY_SEPARATOR . $relativePath;
+                }
+
+                return $this->withDefaultExtension(static::normalizePath($file));
             }
         }
 
         return $file;
+    }
+
+    private function joinPath(string $path, string $relativePath): string
+    {
+        $path = rtrim($path, '/\\');
+
+        if ($relativePath === '') {
+            return $path;
+        }
+
+        return $path . DIRECTORY_SEPARATOR . $relativePath;
+    }
+
+    private function withDefaultExtension(string $file): string
+    {
+        if (F::extension($file) !== '') {
+            return $file;
+        }
+
+        return $file . '.latte';
     }
 
     /**
@@ -62,7 +83,7 @@ class FileLoader extends DefaultFileLoader
      */
     public function getReferredName(string $file, string $referringFile): string
     {
-        $file = $this->resolveAliases($file);
+        $file = $this->resolvePathAlias($file);
 
         return parent::getReferredName($file, $referringFile);
     }

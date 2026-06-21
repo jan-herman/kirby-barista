@@ -106,7 +106,7 @@ class Barista
     {
         $file_loader = $this->latte->getLoader();
 
-        return $file_loader->resolveAliases($path);
+        return $file_loader->resolvePathAlias($path);
     }
 
     public function render(string $file, object|array $params = [], ?string $block = null): void
