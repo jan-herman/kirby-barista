@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.15.3] - 2026-06-24
+### Changed
+- refactor `FileLoader` path alias resolution
+- add default `.latte` extension to non-aliased template paths as well
+
+### Fixed
+- fix bypassed default `.latte` extension when no path aliases were configured, so non-aliased template paths are handled consistently
+
+
 ## [1.15.2] - 2026-06-21
 ### Changed
 - trim leading and trailing whitespace around implicit `{embed}` default block content

@@ -10,6 +10,9 @@ class FileLoader extends DefaultFileLoader
 {
     protected ?array $aliases = null;
 
+    /**
+     * Initializes the default loader and sorts aliases by length.
+     */
     public function __construct(?string $baseDir = null)
     {
         parent::__construct($baseDir);
@@ -25,12 +28,12 @@ class FileLoader extends DefaultFileLoader
     }
 
     /**
-     * Parses file path & resolves aliases
+     * Resolves configured aliases and applies the default extension.
      */
     public function resolvePathAlias(string $file): string
     {
         if (!$this->aliases) {
-            return $file;
+            return $this->withDefaultExtension($file);
         }
 
         foreach ($this->aliases as $search => $replace) {
@@ -38,26 +41,58 @@ class FileLoader extends DefaultFileLoader
                 continue;
             }
 
-            $relativePath = ltrim(substr($file, strlen($search)), '/\\');
+            $relativePath = $this->relativeAliasPath($file, $search);
+            $resolvedPath = $this->resolveAliasPath($search, $replace, $relativePath);
 
-            if (is_string($replace)) {
-                return $this->withDefaultExtension(
-                    static::normalizePath($this->joinPath($replace, $relativePath))
-                );
-            } elseif (is_callable($replace)) {
-                $file = $replace($relativePath);
-
-                if (!$file) {
-                    return $search . DIRECTORY_SEPARATOR . $relativePath;
-                }
-
-                return $this->withDefaultExtension(static::normalizePath($file));
+            if ($resolvedPath !== null) {
+                return $resolvedPath;
             }
         }
 
-        return $file;
+        return $this->withDefaultExtension($file);
     }
 
+    /**
+     * Returns the path segment after the matched alias.
+     */
+    private function relativeAliasPath(string $file, string $alias): string
+    {
+        return ltrim(substr($file, strlen($alias)), '/\\');
+    }
+
+    /**
+     * Resolves one string or callable alias replacement.
+     */
+    private function resolveAliasPath(string $alias, mixed $replace, string $relativePath): ?string
+    {
+        if (is_string($replace)) {
+            return $this->normalizeResolvedPath($this->joinPath($replace, $relativePath));
+        }
+
+        if (is_callable($replace)) {
+            $file = $replace($relativePath);
+
+            if (!$file) {
+                return $alias . DIRECTORY_SEPARATOR . $relativePath;
+            }
+
+            return $this->normalizeResolvedPath($file);
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalizes a resolved path and appends the default extension.
+     */
+    private function normalizeResolvedPath(string $file): string
+    {
+        return $this->withDefaultExtension(static::normalizePath($file));
+    }
+
+    /**
+     * Joins a base path and relative alias path.
+     */
     private function joinPath(string $path, string $relativePath): string
     {
         $path = rtrim($path, '/\\');
@@ -69,6 +104,9 @@ class FileLoader extends DefaultFileLoader
         return $path . DIRECTORY_SEPARATOR . $relativePath;
     }
 
+    /**
+     * Appends the default Latte extension when the path has none.
+     */
     private function withDefaultExtension(string $file): string
     {
         if (F::extension($file) !== '') {
