@@ -17,70 +17,141 @@ class Barista
 {
     protected static self $instance;
     protected Kirby $kirby;
-    protected bool $is_localhost;
-    protected bool $is_tracy_installed;
-    protected string $cache_directory;
+    protected bool $isLocalhost;
+    protected bool $isTracyInstalled;
+    protected string $cacheDirectory;
     protected LatteEngine $latte;
 
+    /**
+     * Initializes Barista and its Latte engine.
+     */
     private function __construct(Kirby $kirby)
     {
         $this->kirby = $kirby;
-        $this->is_localhost = $kirby->environment()->isLocal();
-        $this->is_tracy_installed = class_exists('Tracy\Debugger');
+        $this->isLocalhost = $kirby->environment()->isLocal();
+        $this->isTracyInstalled = class_exists(Debugger::class);
 
-        $this->cache_directory = $this->setCacheDirectory();
-        $this->checkCacheDirectory();
+        $this->cacheDirectory = $this->resolveCacheDirectory();
+        $this->ensureCacheDirectory();
 
-        // Init Latte
-        $this->latte = new LatteEngine();
+        $latte = $this->createLatteEngine();
+        $this->configureLatteFeatures($latte);
+        $this->configureLatteLocale($latte);
+        $this->registerLatteExtensions($latte);
+        $this->configureLatteLoader($latte);
+        $this->configureLatteCache($latte);
 
-        // Set Options
-        $this->latte->setFeature(Feature::StrictTypes, $this->getOption('strictTypes', false));
-        $this->latte->setFeature(Feature::ScopedLoopVariables, $this->getOption('scopedLoopVariables', true));
-        $this->latte->setFeature(Feature::Dedent, $this->getOption('dedent', true));
-        $this->latte->setAutoRefresh($this->getOption('autoRefresh', true));
-        $this->latte->setLocale($this->kirby->language()?->locale(LC_ALL) ?? option('locale', 'en_US'));
-
-        // Register custom tags, filters & functions
-        $this->latte->addExtension(new LatteExtension());
-
-        // Add Extension - Translator
-        $lang = $this->kirby->language()->code();
-        $translator = new Translator($lang);
-        $translator_extension = new TranslatorExtension([$translator, 'translate']);
-        $this->latte->addExtension($translator_extension);
-
-        // Add Extension - Tracy
-        if ($this->is_tracy_installed) {
-            $this->latte->addExtension(new TracyExtension());
-        }
-
-        // Set custom file loader
-        $this->latte->setLoader(new FileLoader());
-
-        // Set temp directory
-        $this->latte->setCacheDirectory($this->cache_directory);
-
-        // Kirby hook
-        $this->latte = $kirby->apply('jan-herman.barista.init:after', ['latte' => $this->latte], 'latte');
+        $this->latte = $this->applyInitHook($latte);
     }
 
+    /**
+     * Returns the shared Barista instance.
+     */
     public static function getInstance(Kirby $kirby)
     {
         return self::$instance ??= new self($kirby);
     }
 
+    /**
+     * Returns the configured Latte engine.
+     */
     public function getEngine(): LatteEngine
     {
         return $this->latte;
     }
 
+    /**
+     * Removes and recreates the Latte cache directory.
+     */
+    public function flushCache(): void
+    {
+        if (Dir::remove($this->cacheDirectory) === false) {
+            throw new KirbyException($this->cacheDirectory . ' directory could not be removed.');
+        }
+
+        $this->ensureCacheDirectory();
+    }
+
+    /**
+     * Returns a Barista plugin option.
+     */
     public function getOption(string $key, $default = null): mixed
     {
         return option('jan-herman.barista.' . $key, $default);
     }
 
-    protected function setCacheDirectory(): string
+    /**
+     * Creates a fresh Latte engine.
+     */
+    protected function createLatteEngine(): LatteEngine
+    {
+        return new LatteEngine();
+    }
+
+    /**
+     * Applies feature flags and refresh behavior.
+     */
+    protected function configureLatteFeatures(LatteEngine $latte): void
+    {
+        $latte->setFeature(Feature::StrictTypes, $this->getOption('strictTypes', false));
+        $latte->setFeature(Feature::ScopedLoopVariables, $this->getOption('scopedLoopVariables', true));
+        $latte->setFeature(Feature::Dedent, $this->getOption('dedent', true));
+        $latte->setAutoRefresh($this->getOption('autoRefresh', true));
+    }
+
+    /**
+     * Applies the current Kirby locale.
+     */
+    protected function configureLatteLocale(LatteEngine $latte): void
+    {
+        $latte->setLocale($this->kirby->language()?->locale(LC_ALL) ?? option('locale', 'en_US'));
+    }
+
+    /**
+     * Registers Barista, translator and optional Tracy extensions.
+     */
+    protected function registerLatteExtensions(LatteEngine $latte): void
+    {
+        $latte->addExtension(new LatteExtension());
+
+        $lang = $this->kirby->language()?->code() ?? 'en';
+        $translator = new Translator($lang);
+        $translatorExtension = new TranslatorExtension([$translator, 'translate']);
+        $latte->addExtension($translatorExtension);
+
+        if ($this->isTracyInstalled) {
+            $latte->addExtension(new TracyExtension());
+        }
+    }
+
+    /**
+     * Installs Barista's custom file loader.
+     */
+    protected function configureLatteLoader(LatteEngine $latte): void
+    {
+        $latte->setLoader(new FileLoader());
+    }
+
+    /**
+     * Points Latte at Barista's cache directory.
+     */
+    protected function configureLatteCache(LatteEngine $latte): void
+    {
+        $latte->setCacheDirectory($this->cacheDirectory);
+    }
+
+    /**
+     * Runs the post-initialization hook.
+     */
+    protected function applyInitHook(LatteEngine $latte): LatteEngine
+    {
+        return $this->kirby->apply('jan-herman.barista.init:after', ['latte' => $latte], 'latte');
+    }
+
+    /**
+     * Resolves the configured cache directory path.
+     */
+    protected function resolveCacheDirectory(): string
     {
         $path = $this->getOption('cacheDirectory', $this->kirby->root('cache') . '/barista');
 
@@ -91,29 +162,45 @@ class Barista
         return $path;
     }
 
-    protected function checkCacheDirectory(): void
+    /**
+     * Creates and validates the cache directory.
+     */
+    protected function ensureCacheDirectory(): void
     {
-        if (Dir::exists($this->cache_directory) === false) {
+        if (Dir::exists($this->cacheDirectory) === false) {
             try {
-                Dir::make($this->cache_directory);
+                Dir::make($this->cacheDirectory);
             } catch (Exception $e) {
-                throw new KirbyException($this->cache_directory . ' directory is not writable.');
+                throw new KirbyException($this->cacheDirectory . ' directory is not writable.');
             }
+        }
+
+        if (Dir::exists($this->cacheDirectory) === false || is_writable($this->cacheDirectory) === false) {
+            throw new KirbyException($this->cacheDirectory . ' directory is not writable.');
         }
     }
 
+    /**
+     * Resolves Barista path aliases for a template path.
+     */
     public function resolvePathAlias(string $path): string
     {
-        $file_loader = $this->latte->getLoader();
+        $fileLoader = $this->latte->getLoader();
 
-        return $file_loader->resolvePathAlias($path);
+        return $fileLoader->resolvePathAlias($path);
     }
 
+    /**
+     * Renders a Latte template directly.
+     */
     public function render(string $file, object|array $params = [], ?string $block = null): void
     {
         echo $this->renderToString($file, $params, $block);
     }
 
+    /**
+     * Renders a Latte template to a string.
+     */
     public function renderToString(string $file, object|array $params = [], ?string $block = null): string
     {
         try {
@@ -126,10 +213,10 @@ class Barista
                 'params' => $params,
             ], 'html');
         } catch (Exception $e) {
-            if ($this->is_localhost) {
+            if ($this->isLocalhost) {
                 throw $e;
             } else {
-                if ($this->is_tracy_installed) {
+                if ($this->isTracyInstalled) {
                     Debugger::log($e, Debugger::ERROR);
                 }
                 return '';

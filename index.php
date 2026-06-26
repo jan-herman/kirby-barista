@@ -4,6 +4,7 @@ use JanHerman\Barista\Barista;
 use JanHerman\Barista\Template;
 use JanHerman\Barista\Snippet;
 
+use Kirby\CLI\CLI;
 use Kirby\Cms\App as Kirby;
 
 use Kirby\Sane\Html as SaneHtml;
@@ -35,6 +36,16 @@ Kirby::plugin('jan-herman/barista', [
         'snippet' => function (Kirby $kirby, string $name, array $data = [], bool $slots = false): Snippet|string {
             return Snippet::factory($name, $data, $slots);
         }
+    ],
+    'commands' => [
+        'barista:flush-cache' => [
+            'description' => 'Flushes the Barista Latte template cache',
+            'command' => static function (CLI $cli): void {
+                barista()->flushCache();
+
+                $cli->success('The Barista cache has been flushed');
+            }
+        ]
     ],
     'routes' => [
         [

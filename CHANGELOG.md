@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.16.0] - 2026-06-26
+### Added
+- `Barista->flushCache()` method
+- `kirby barista:flush-cache` CLI command
+
+### Changed
+- refactor `Barista` class
+
+
 ## [1.15.3] - 2026-06-24
 ### Changed
 - refactor `FileLoader` path alias resolution
