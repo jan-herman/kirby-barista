@@ -141,6 +141,24 @@ assertSameValue(
 );
 
 assertSameValue(
+    'implicit loose content supports include parent',
+    '<button><span>Parent</span><strong>Child</strong></button>',
+    renderTemplate(
+        '{embed file "component", label: "Parent"}{include parent}<strong>Child</strong>{/embed}',
+        '<button>{block default}<span>{$label}</span>{/block}</button>',
+    ),
+);
+
+assertSameValue(
+    'explicit default block still supports include parent',
+    '<button><span>Parent</span><strong>Child</strong></button>',
+    renderTemplate(
+        '{embed file "component", label: "Parent"}{block default}{include parent}<strong>Child</strong>{/block}{/embed}',
+        '<button>{block default}<span>{$label}</span>{/block}</button>',
+    ),
+);
+
+assertSameValue(
     'outer whitespace around loose content is trimmed',
     '<section><p>Hello</p></section>',
     renderTemplate(

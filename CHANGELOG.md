@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.16.1] - 2026-06-26
+### Fixed
+- support for `{include parent}` inside implicitEmbedBlock
+
+
 ## [1.16.0] - 2026-06-26
 ### Added
 - `Barista->flushCache()` method

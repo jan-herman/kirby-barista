@@ -62,10 +62,17 @@ class EmbedNode extends LatteEmbedNode
         $prev_index = $parser->blockLayer;
         $parser->blockLayer = $node->layer = count($parser->blocks);
         $parser->blocks[$parser->blockLayer] = [];
+        $implicit_block = self::createImplicitBlock($tag, $implicit_block_name, $node->layer);
+        $parser->pushTag($implicit_block->block->tag);
 
         try {
-            [$node->blocks] = yield;
-            self::wrapLooseContent($node, $parser, $tag, $implicit_block_name);
+            try {
+                [$node->blocks] = yield;
+            } finally {
+                $parser->popTag();
+            }
+
+            self::wrapLooseContent($node, $parser, $tag, $implicit_block);
         } finally {
             $parser->blockLayer = $prev_index;
         }
@@ -86,8 +93,9 @@ class EmbedNode extends LatteEmbedNode
         return $name;
     }
 
-    private static function wrapLooseContent(self $node, TemplateParser $parser, Tag $embed_tag, string $block_name): void
+    private static function wrapLooseContent(self $node, TemplateParser $parser, Tag $embed_tag, BlockNode $block): void
     {
+        $block_name = $block->block->name->value;
         $children = [];
         $loose_content = [];
         $insert_at = null;
@@ -115,7 +123,9 @@ class EmbedNode extends LatteEmbedNode
             );
         }
 
-        $block = self::createImplicitBlock($loose_content, $parser, $embed_tag, $block_name, $node->layer);
+        self::finalizeImplicitBlock($block, $loose_content, $embed_tag, $block_name, $node->layer);
+        $parser->checkBlockIsUnique($block->block);
+
         array_splice($children, $insert_at ?? 0, 0, [$block]);
         $node->blocks->children = $children;
     }
@@ -132,27 +142,40 @@ class EmbedNode extends LatteEmbedNode
         }
     }
 
+    private static function createImplicitBlock(Tag $embed_tag, string $block_name, int|string $layer): BlockNode
+    {
+        $block_node = new BlockNode();
+        $block_node->position = $embed_tag->position;
+        $block_node->tagRanges = [$embed_tag->position];
+        $block_node->modifier = new ModifierNode([]);
+        $block_node->content = new FragmentNode([]);
+        $block_node->block = new Block(new StringNode($block_name, $embed_tag->position), $layer, self::createImplicitBlockTag($embed_tag->position, $embed_tag));
+        $block_node->block->tag->node = $block_node;
+
+        return $block_node;
+    }
+
     /** @param AreaNode[] $content */
-    private static function createImplicitBlock(array $content, TemplateParser $parser, Tag $embed_tag, string $block_name, int|string $layer): BlockNode
+    private static function finalizeImplicitBlock(BlockNode $block_node, array $content, Tag $embed_tag, string $block_name, int|string $layer): void
     {
         $position = $content[0]->position ?? $embed_tag->position;
         $tag_position = $position instanceof Range ? $position : $embed_tag->position;
-        $block_tag = new Tag(
-            name: 'block',
-            tokens: [new Token(Token::End, '', $tag_position)],
-            position: $tag_position,
-            parent: $embed_tag,
-        );
+        $block_tag = self::createImplicitBlockTag($tag_position, $embed_tag);
+        $block_tag->node = $block_node;
 
-        $block_node = new BlockNode();
         $block_node->position = $position;
         $block_node->tagRanges = [$tag_position];
-        $block_node->modifier = new ModifierNode([]);
         $block_node->content = new FragmentNode($content);
         $block_node->block = new Block(new StringNode($block_name, $tag_position), $layer, $block_tag);
+    }
 
-        $parser->checkBlockIsUnique($block_node->block);
-
-        return $block_node;
+    private static function createImplicitBlockTag(Range $position, Tag $embed_tag): Tag
+    {
+        return new Tag(
+            name: 'block',
+            tokens: [new Token(Token::End, '', $position)],
+            position: $position,
+            parent: $embed_tag,
+        );
     }
 }
