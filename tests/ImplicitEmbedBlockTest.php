@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-use JanHerman\Barista\LatteExtension;
+use JanHerman\Barista\Latte\LatteExtension;
 use Kirby\Cms\App;
 use Latte\Compiler\Nodes\TextNode;
 use Latte\Compiler\Tag;

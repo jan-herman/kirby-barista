@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.16.2] - 2026-06-28
+### Changed
+- refactoring
+    - move `LatteExtension`, `FileLoader` & `Translator` to `Latte` namespace
+    - move built-in filters to `Filters` class
+    - rename snake_cased variables to camelCase
+
+### Fixed
+- added missing supoprt for `{_'message.key', 'fallback'}` translation syntax
+- added missing cache for snippet file resolver
+
+
 ## [1.16.1] - 2026-06-26
 ### Fixed
 - support for `{include parent}` inside implicitEmbedBlock

@@ -1,6 +1,6 @@
 <?php
 
-namespace JanHerman\Barista;
+namespace JanHerman\Barista\Latte;
 
 use Kirby\Filesystem\F;
 use Latte\Loaders\FileLoader as DefaultFileLoader;

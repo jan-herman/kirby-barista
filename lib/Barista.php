@@ -2,7 +2,9 @@
 
 namespace JanHerman\Barista;
 
-use JanHerman\Barista\LatteExtension;
+use JanHerman\Barista\Latte\FileLoader;
+use JanHerman\Barista\Latte\LatteExtension;
+use JanHerman\Barista\Latte\Translator;
 use Kirby\Cms\App as Kirby;
 use Kirby\Exception\Exception as KirbyException;
 use Kirby\Filesystem\Dir;

@@ -5,6 +5,7 @@ namespace JanHerman\Barista;
 use Kirby\Template\Snippet as DefaultSnippet;
 
 use Kirby\Cms\App;
+use Kirby\Filesystem\F;
 use Kirby\Toolkit\A;
 use Kirby\Toolkit\Str;
 
@@ -29,7 +30,8 @@ class Snippet extends DefaultSnippet
             return static::begin($file, $data);
         }
 
-        return static::load($file, static::scope($data));
+        $data = static::scope($data);
+        return static::load($file, $data);
     }
 
     /**
@@ -45,22 +47,29 @@ class Snippet extends DefaultSnippet
 
         foreach ($names as $name) {
             $name = (string)$name;
-            $php_file = $root . '/' . $name . '.php';
-            $latte_file = $root . '/' . $name . '.latte';
 
-            if (file_exists($php_file) === true) {
-                $file = $php_file;
-            } elseif (file_exists($latte_file) === true) {
-                $file = $latte_file;
+            // retrieve the file from the cache if it exists
+			if (isset(static::$cache[$name]) === true) {
+				return static::$cache[$name];
+			}
+
+            $phpFile = $root . '/' . $name . '.php';
+            $latteFile = $root . '/' . $name . '.latte';
+
+            if (F::exists($phpFile, $root) === true) {
+                $file = $phpFile;
+            } elseif (F::exists($latteFile, $root) === true) {
+                $file = $latteFile;
             } else {
                 $file = $kirby->extensions('snippets')[$name] ?? null;
             }
 
             if ($file) {
-                break;
-            }
+				// cache the file for future use
+				return static::$cache[$name] = $file;
+			}
         }
 
-        return $file;
+        return null;
     }
 }

@@ -3,12 +3,10 @@
 use JanHerman\Barista\Barista;
 use JanHerman\Barista\Template;
 use JanHerman\Barista\Snippet;
-
-use Kirby\CLI\CLI;
 use Kirby\Cms\App as Kirby;
-
-use Kirby\Sane\Html as SaneHtml;
+use Kirby\CLI\CLI;
 use Latte\Runtime\Html;
+use Kirby\Sane\Html as SaneHtml;
 
 @include_once __DIR__ . '/vendor/autoload.php';
 
@@ -30,8 +28,8 @@ Kirby::plugin('jan-herman/barista', [
         ],
     ],
     'components' => [
-        'template' => function (Kirby $kirby, string $name, ?string $content_type = null) {
-            return new Template($name, $content_type);
+        'template' => function (Kirby $kirby, string $name, ?string $contentType = null) {
+            return new Template($name, $contentType);
         },
         'snippet' => function (Kirby $kirby, string $name, array $data = [], bool $slots = false): Snippet|string {
             return Snippet::factory($name, $data, $slots);
@@ -75,7 +73,7 @@ function barista()
 
 function safe_html($html): Html
 {
-    $safe_html = SaneHtml::sanitize($html);
-    $safe_html = str_replace('&amp;nbsp;', '&nbsp;', $safe_html);
-    return new Html($safe_html);
+    $safeHtml = SaneHtml::sanitize($html);
+    $safeHtml = str_replace('&amp;nbsp;', '&nbsp;', $safeHtml);
+    return new Html($safeHtml);
 }
