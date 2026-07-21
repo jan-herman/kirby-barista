@@ -4,6 +4,7 @@ namespace JanHerman\Barista;
 
 use JanHerman\Barista\Latte\FileLoader;
 use JanHerman\Barista\Latte\LatteExtension;
+use JanHerman\Barista\Latte\TemplateDependencies;
 use JanHerman\Barista\Latte\Translator;
 use Kirby\Cms\App as Kirby;
 use Kirby\Exception\Exception as KirbyException;
@@ -23,6 +24,7 @@ class Barista
     protected bool $isTracyInstalled;
     protected string $cacheDirectory;
     protected LatteEngine $latte;
+    protected ?TemplateDependencies $templateDependencies = null;
 
     /**
      * Initializes Barista and its Latte engine.
@@ -60,6 +62,33 @@ class Barista
     public function getEngine(): LatteEngine
     {
         return $this->latte;
+    }
+
+    /**
+     * Returns the collector for rendered template dependencies.
+     *
+     * When a template file is provided, renders that template first and resets
+     * the collector so that it contains only the target template and its
+     * runtime dependencies.
+     */
+    public function getTemplateDependencies(
+        ?string $file = null,
+        object|array $params = [],
+        ?string $block = null,
+    ): TemplateDependencies
+    {
+        if ($this->templateDependencies === null) {
+            throw new \LogicException(
+                'Template dependency tracking is disabled. Set the jan-herman.barista.templateDependencies option to true.',
+            );
+        }
+
+        if ($file !== null) {
+            $this->templateDependencies->reset();
+            $this->renderToString($file, $params, $block);
+        }
+
+        return $this->templateDependencies;
     }
 
     /**
@@ -115,6 +144,11 @@ class Barista
     protected function registerLatteExtensions(LatteEngine $latte): void
     {
         $latte->addExtension(new LatteExtension());
+
+        if ($this->getOption('templateDependencies', false)) {
+            $this->templateDependencies = new TemplateDependencies();
+            $latte->addExtension($this->templateDependencies);
+        }
 
         $lang = $this->kirby->language()?->code() ?? 'en';
         $translator = new Translator($lang);
