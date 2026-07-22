@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+### Added
+- opt-in runtime template dependency tracking via `Barista->getTemplateDependencies()`
+
+### Changed
+- replace `LatteExtension` with `BaristaExtension` and `ImplicitEmbedBlockExtension`
+
+
 ## [1.16.2] - 2026-06-28
 ### Changed
 - refactoring

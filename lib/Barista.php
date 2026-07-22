@@ -3,8 +3,9 @@
 namespace JanHerman\Barista;
 
 use JanHerman\Barista\Latte\FileLoader;
-use JanHerman\Barista\Latte\LatteExtension;
+use JanHerman\Barista\Latte\BaristaExtension;
 use JanHerman\Barista\Latte\TemplateDependencies;
+use JanHerman\Barista\Latte\ImplicitEmbedBlockExtension;
 use JanHerman\Barista\Latte\Translator;
 use Kirby\Cms\App as Kirby;
 use Kirby\Exception\Exception as KirbyException;
@@ -143,7 +144,13 @@ class Barista
      */
     protected function registerLatteExtensions(LatteEngine $latte): void
     {
-        $latte->addExtension(new LatteExtension());
+        if ($this->getOption('implicitEmbedBlock', true)) {
+            $latte->addExtension(new ImplicitEmbedBlockExtension(
+                $this->getOption('implicitEmbedBlockName', 'default'),
+            ));
+        }
+
+        $latte->addExtension(new BaristaExtension());
 
         if ($this->getOption('templateDependencies', false)) {
             $this->templateDependencies = new TemplateDependencies();

@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 
-use JanHerman\Barista\Latte\LatteExtension;
+use JanHerman\Barista\Latte\BaristaExtension;
+use JanHerman\Barista\Latte\ImplicitEmbedBlockExtension;
 use Kirby\Cms\App;
 use Latte\Compiler\Nodes\TextNode;
 use Latte\Compiler\Tag;
@@ -58,7 +59,12 @@ function renderTemplate(string $main, string $component, array $params = [], arr
     bootKirby($barista_options);
 
     $latte = new Engine();
-    $latte->addExtension(new LatteExtension());
+    if (option('jan-herman.barista.implicitEmbedBlock', true)) {
+        $latte->addExtension(new ImplicitEmbedBlockExtension(
+            option('jan-herman.barista.implicitEmbedBlockName', 'default'),
+        ));
+    }
+    $latte->addExtension(new BaristaExtension());
     $latte->setLoader(new StringLoader([
         'main' => $main,
         'component' => $component,
@@ -71,6 +77,14 @@ function assertSameValue(string $label, string $expected, string $actual): void
 {
     if ($actual !== $expected) {
         fwrite(STDERR, "$label failed.\nExpected: $expected\nActual:   $actual\n");
+        exit(1);
+    }
+}
+
+function assertDifferentValue(string $label, string $first, string $second): void
+{
+    if ($first === $second) {
+        fwrite(STDERR, "$label failed.\nValues should differ: $first\n");
         exit(1);
     }
 }
@@ -110,6 +124,20 @@ assertSameValue(
         [],
         ['implicitEmbedBlockName' => 'content'],
     ),
+);
+
+$defaultBlockEngine = new Engine();
+$defaultBlockEngine->addExtension(new ImplicitEmbedBlockExtension('default'));
+$defaultBlockEngine->addExtension(new BaristaExtension());
+
+$contentBlockEngine = new Engine();
+$contentBlockEngine->addExtension(new ImplicitEmbedBlockExtension('content'));
+$contentBlockEngine->addExtension(new BaristaExtension());
+
+assertDifferentValue(
+    'implicit block name changes the template cache key',
+    $defaultBlockEngine->getTemplateClass('main'),
+    $contentBlockEngine->getTemplateClass('main'),
 );
 
 assertSameValue(
