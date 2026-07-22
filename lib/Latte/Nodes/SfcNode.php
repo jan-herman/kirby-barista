@@ -4,11 +4,14 @@ namespace JanHerman\Barista\Latte\Nodes;
 
 use Generator;
 use Latte\CompileException;
+use Latte\Compiler\Nodes\FragmentNode;
 use Latte\Compiler\Nodes\Php\IdentifierNode;
 use Latte\Compiler\Nodes\Php\Scalar\StringNode;
 use Latte\Compiler\Nodes\StatementNode;
+use Latte\Compiler\Nodes\TextNode;
 use Latte\Compiler\PrintContext;
 use Latte\Compiler\Tag;
+use Latte\Compiler\TemplateLexer;
 use Latte\Compiler\TemplateParser;
 
 abstract class SfcNode extends StatementNode
@@ -32,12 +35,16 @@ abstract class SfcNode extends StatementNode
 
         $lexer = $parser->getLexer();
         $lexer->setSyntax('off', $tag->name);
+        $lexer->pushState(TemplateLexer::StatePlain);
 
         try {
-            yield;
+            [$content] = yield;
         } finally {
+            $lexer->popState();
             $lexer->popSyntax();
         }
+
+        static::validateContent($tag, $content);
 
         return $node;
     }
@@ -73,5 +80,16 @@ abstract class SfcNode extends StatementNode
                 );
             }
         }
+    }
+
+    private static function validateContent(Tag $tag, FragmentNode $content): void
+    {
+        foreach ($content->children as $child) {
+            if (!$child instanceof TextNode || trim($child->content) !== '') {
+                return;
+            }
+        }
+
+        throw new CompileException("Tag {{$tag->name}} must not be empty.", $tag->position);
     }
 }

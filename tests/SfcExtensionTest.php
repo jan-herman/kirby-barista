@@ -86,13 +86,18 @@ foreach ([
     assertSameValue($label, '<main>Visible</main>', renderSfcTemplate('<main>Visible</main>' . $block));
 }
 
-$template = "<article>Visible</article>{style lang: 'scss'}SFC_STYLE_SENTINEL {notALatteTag} .component { color: red; }{/style}{script lang: 'ts'}SFC_SCRIPT_SENTINEL const component = { enabled: true }; {notALatteTag}{/script}";
+$template = "<article>Visible</article>{style lang: 'scss'}SFC_STYLE_SENTINEL {notALatteTag} .component{color:red}{/style}{script lang: 'ts'}SFC_SCRIPT_SENTINEL const component={enabled:true}; const html=\"<div class='component'>\"; const marker=\"<!--\"; const identity=<T>(value:T):T=>value; {notALatteTag}{/script}";
 $compiled = compileSfcTemplate($template);
 
 assertSameValue('SFC blocks render no output', '<article>Visible</article>', renderSfcTemplate($template));
 assertNotContains('compiled template omits style content', 'SFC_STYLE_SENTINEL', $compiled);
 assertNotContains('compiled template omits script content', 'SFC_SCRIPT_SENTINEL', $compiled);
 assertNotContains('compiled template omits ignored Latte syntax', 'notALatteTag', $compiled);
+assertSameValue(
+    'lexer state is restored after SFC block',
+    '<footer>1</footer>',
+    renderSfcTemplate('{script}const html="<!--";{/script}<footer>{= 1}</footer>'),
+);
 
 assertThrows(
     'style requires a closing tag',
@@ -116,6 +121,30 @@ assertThrows(
     'script cannot be self-closing',
     'must be paired',
     fn() => compileSfcTemplate('{script/}'),
+);
+
+assertThrows(
+    'style cannot be empty',
+    'Tag {style} must not be empty',
+    fn() => compileSfcTemplate('{style}{/style}'),
+);
+
+assertThrows(
+    'style cannot contain only newlines',
+    'Tag {style} must not be empty',
+    fn() => compileSfcTemplate("{style}\n\n{/style}"),
+);
+
+assertThrows(
+    'script cannot be empty',
+    'Tag {script} must not be empty',
+    fn() => compileSfcTemplate('{script}{/script}'),
+);
+
+assertThrows(
+    'script cannot contain only whitespace',
+    'Tag {script} must not be empty',
+    fn() => compileSfcTemplate("{script}\n \t\n{/script}"),
 );
 
 assertThrows(
