@@ -6,6 +6,7 @@ use JanHerman\Barista\Latte\FileLoader;
 use JanHerman\Barista\Latte\BaristaExtension;
 use JanHerman\Barista\Latte\TemplateDependencies;
 use JanHerman\Barista\Latte\ImplicitEmbedBlockExtension;
+use JanHerman\Barista\Latte\SfcExtension;
 use JanHerman\Barista\Latte\Translator;
 use Kirby\Cms\App as Kirby;
 use Kirby\Exception\Exception as KirbyException;
@@ -148,6 +149,10 @@ class Barista
             $latte->addExtension(new ImplicitEmbedBlockExtension(
                 $this->getOption('implicitEmbedBlockName', 'default'),
             ));
+        }
+
+        if ($this->getOption('sfc', false)) {
+            $latte->addExtension(new SfcExtension());
         }
 
         $latte->addExtension(new BaristaExtension());

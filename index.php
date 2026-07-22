@@ -19,6 +19,7 @@ Kirby::plugin('jan-herman/barista', [
         'cacheDirectory' => null,
         'implicitEmbedBlock' => true,
         'implicitEmbedBlockName' => 'default',
+        'sfc' => false,
         'templateDependencies' => false,
         'pathAliases' => null,
         'filters' => [],

@@ -3,6 +3,7 @@
 ## Unreleased
 ### Added
 - opt-in runtime template dependency tracking via `Barista->getTemplateDependencies()`
+- opt-in SFC `{style}` and `{script}` tags via the `sfc` option
 
 ### Changed
 - replace `LatteExtension` with `BaristaExtension` and `ImplicitEmbedBlockExtension`
