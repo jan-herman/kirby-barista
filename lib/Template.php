@@ -2,27 +2,37 @@
 
 namespace JanHerman\Barista;
 
+use JanHerman\Barista\Latte\TemplateDependencies;
+use Kirby\Filesystem\F;
 use Kirby\Template\Template as DefaultTemplate;
-use Kirby\Toolkit\Str;
 
 class Template extends DefaultTemplate
 {
+    public function extension(): string
+    {
+        return 'latte';
+    }
+
+    public function isLatte(): bool
+    {
+        return F::extension($this->file()) === $this->extension();
+    }
+
     public function render(array $data = []): string
     {
-        if (Str::endsWith($this->file(), '.latte')) {
-            return barista()->renderToString($this->file(), $data);
-        } else {
+        if ($this->isLatte() === false) {
             return parent::render($data);
         }
+
+        return barista()->renderToString($this->file(), $data);
     }
 
     public function renderBlock(string $name, array $data = []): string
     {
-        return barista()->renderToString($this->file(), $data, $name);
-    }
+        if ($this->isLatte() === false) {
+            return '';
+        }
 
-    public function extension(): string
-    {
-        return 'latte';
+        return barista()->renderToString($this->file(), $data, $name);
     }
 }

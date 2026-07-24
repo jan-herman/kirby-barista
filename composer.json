@@ -27,7 +27,11 @@
         }
     },
     "scripts": {
-        "test": "php tests/ImplicitEmbedBlockTest.php"
+        "test": [
+            "php tests/ImplicitEmbedBlockTest.php",
+            "php tests/SfcExtensionTest.php",
+            "php tests/TemplateDependenciesTest.php"
+        ]
     },
     "autoload": {
         "psr-4": {

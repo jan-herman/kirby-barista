@@ -4,6 +4,7 @@ namespace JanHerman\Barista\Latte\Nodes;
 
 use Generator;
 use Latte\CompileException;
+use Latte\Compiler\Block;
 use Latte\Compiler\Nodes\FragmentNode;
 use Latte\Compiler\Nodes\Php\IdentifierNode;
 use Latte\Compiler\Nodes\Php\Scalar\StringNode;
@@ -13,10 +14,14 @@ use Latte\Compiler\PrintContext;
 use Latte\Compiler\Tag;
 use Latte\Compiler\TemplateLexer;
 use Latte\Compiler\TemplateParser;
+use Latte\Runtime\Template;
 
 abstract class SfcNode extends StatementNode
 {
     protected const Languages = [];
+    protected const Type = '';
+
+    protected Tag $tag;
 
     /** @return Generator<int, ?list<string>, array{mixed, ?Tag}, static> */
     public static function create(Tag $tag, TemplateParser $parser): Generator
@@ -32,6 +37,7 @@ abstract class SfcNode extends StatementNode
         static::validateProperties($tag);
         $tag->outputMode = $tag::OutputRemoveIndentation;
         $node = $tag->node = new static;
+        $node->tag = $tag;
 
         $lexer = $parser->getLexer();
         $lexer->setSyntax('off', $tag->name);
@@ -49,8 +55,37 @@ abstract class SfcNode extends StatementNode
         return $node;
     }
 
+    /**
+     * Registers an empty local block as durable metadata on the compiled template.
+     *
+     * Returning an empty string keeps the SFC tag out of the rendered template,
+     * while Latte's generated Blocks constant makes the marker available through
+     * Runtime\Template::hasBlock() before the template is rendered.
+     */
     public function print(PrintContext $context): string
     {
+        $type = $this::Type;
+        $blockName = "__sfc_{$type}";
+
+        foreach ($context->blocks as $registeredBlock) {
+            if (
+                $registeredBlock->layer === Template::LayerLocal
+                && $registeredBlock->name instanceof StringNode
+                && $registeredBlock->name->value === $blockName
+            ) {
+                return '';
+            }
+        }
+
+        $block = new Block(
+            new StringNode($blockName, $this->position),
+            Template::LayerLocal,
+            $this->tag,
+        );
+
+        $context->addBlock($block);
+        $block->content = '';
+
         return '';
     }
 

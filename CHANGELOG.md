@@ -2,7 +2,8 @@
 
 ## Unreleased
 ### Added
-- opt-in runtime template dependency tracking via `Barista->getTemplateDependencies()`
+- opt-in runtime template dependency tracking via `Barista->collectTemplateDependencies()` and `Barista->templateDependencies()`
+- `TemplateDependencies->templates()`, `files()`, `tree()`, `filesWithStyle()`, and `filesWithScript()` methods
 - opt-in SFC `{style}` and `{script}` tags via the `sfc` option
 
 ### Changed

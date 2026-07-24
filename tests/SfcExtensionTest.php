@@ -1,8 +1,10 @@
 <?php declare(strict_types=1);
 
 use JanHerman\Barista\Latte\SfcExtension;
+use JanHerman\Barista\Latte\TemplateDependencies;
 use Latte\Engine;
 use Latte\Loaders\StringLoader;
+use Latte\Runtime\Template;
 
 $autoloads = [
     dirname(__DIR__) . '/vendor/autoload.php',
@@ -40,10 +42,33 @@ function renderSfcTemplate(string $template): string
     return createSfcEngine($template)->renderToString('main');
 }
 
+/**
+ * @param array<string, string> $templates
+ */
+function collectSfcDependencies(array $templates): TemplateDependencies
+{
+    $dependencies = new TemplateDependencies();
+    $latte = new Engine();
+    $latte->addExtension(new SfcExtension());
+    $latte->addExtension($dependencies);
+    $latte->setLoader(new StringLoader($templates));
+    $latte->renderToString('main');
+
+    return $dependencies;
+}
+
 function assertSameValue(string $label, string $expected, string $actual): void
 {
     if ($actual !== $expected) {
         fwrite(STDERR, "$label failed.\nExpected: $expected\nActual:   $actual\n");
+        exit(1);
+    }
+}
+
+function assertContains(string $label, string $needle, string $haystack): void
+{
+    if (!str_contains($haystack, $needle)) {
+        fwrite(STDERR, "$label failed.\nMissing value: $needle\n");
         exit(1);
     }
 }
@@ -97,6 +122,55 @@ assertSameValue(
     'lexer state is restored after SFC block',
     '<footer>1</footer>',
     renderSfcTemplate('{script}const html="<!--";{/script}<footer>{= 1}</footer>'),
+);
+
+$metadataTemplate = compileSfcTemplate(
+    '{style}a{/style}{script}a(){/script}{style}b{/style}{script}b(){/script}',
+);
+
+assertContains('compiled template records a style marker', '__sfc_style', $metadataTemplate);
+assertContains('compiled template records a script marker', '__sfc_script', $metadataTemplate);
+assertNotContains('compiled template does not index style markers', '__sfc_style_0', $metadataTemplate);
+assertNotContains('compiled template does not index script markers', '__sfc_script_0', $metadataTemplate);
+assertNotContains('compiled template does not render SFC metadata blocks', "renderBlock('__sfc_", $metadataTemplate);
+
+$dependencies = collectSfcDependencies([
+    'main' => '{include file "style"}{include file "script"}{include file "both"}{include file "plain"}{include file "style"}',
+    'style' => '{style}.style-only{}{/style}',
+    'script' => '{script}scriptOnly(){/script}',
+    'both' => '{style}.first{}{/style}{style}.second{}{/style}{script}both(){/script}',
+    'plain' => '<p>Plain</p>',
+]);
+
+assertSameValue(
+    'dependencies returns rendered templates',
+    '6',
+    (string) count($dependencies->templates()),
+);
+assertSameValue(
+    'dependencies returns unique files in render order',
+    '["main","style","script","both","plain"]',
+    json_encode($dependencies->files()),
+);
+assertSameValue(
+    'dependencies filters files containing style tags',
+    '["style","both"]',
+    json_encode($dependencies->filesWithStyle()),
+);
+assertSameValue(
+    'dependencies filters files containing script tags',
+    '["script","both"]',
+    json_encode($dependencies->filesWithScript()),
+);
+assertSameValue(
+    'SFC metadata blocks use the local block layer',
+    '["__sfc_style","__sfc_script"]',
+    json_encode($dependencies->templates()[3]->getBlockNames(Template::LayerLocal)),
+);
+assertSameValue(
+    'dependencies returns the runtime tree',
+    '[{"file":"main","relation":null,"children":[{"file":"style","relation":"include","children":[]},{"file":"script","relation":"include","children":[]},{"file":"both","relation":"include","children":[]},{"file":"plain","relation":"include","children":[]},{"file":"style","relation":"include","children":[]}]}]',
+    json_encode($dependencies->tree()),
 );
 
 assertThrows(

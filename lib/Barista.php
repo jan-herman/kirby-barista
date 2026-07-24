@@ -67,27 +67,30 @@ class Barista
     }
 
     /**
-     * Returns the collector for rendered template dependencies.
-     *
-     * When a template file is provided, renders that template first and resets
-     * the collector so that it contains only the target template and its
-     * runtime dependencies.
+     * Renders a template and collects only its runtime template dependencies.
      */
-    public function getTemplateDependencies(
-        ?string $file = null,
+    public function collectTemplateDependencies(
+        string $file,
         object|array $params = [],
         ?string $block = null,
     ): TemplateDependencies
+    {
+        $dependencies = $this->templateDependencies();
+        $dependencies->reset();
+        $this->renderToString($file, $params, $block);
+
+        return $dependencies;
+    }
+
+    /**
+     * Returns the collector for rendered template dependencies.
+     */
+    public function templateDependencies(): TemplateDependencies
     {
         if ($this->templateDependencies === null) {
             throw new \LogicException(
                 'Template dependency tracking is disabled. Set the jan-herman.barista.templateDependencies option to true.',
             );
-        }
-
-        if ($file !== null) {
-            $this->templateDependencies->reset();
-            $this->renderToString($file, $params, $block);
         }
 
         return $this->templateDependencies;

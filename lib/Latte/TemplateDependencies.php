@@ -10,6 +10,9 @@ use Latte\Runtime\Template;
  */
 class TemplateDependencies extends Extension
 {
+    protected const SfcScriptBlock = '__sfc_script';
+    protected const SfcStyleBlock = '__sfc_style';
+
     /** @var Template[] */
     protected array $templates = [];
 
@@ -34,7 +37,7 @@ class TemplateDependencies extends Extension
      *
      * @return Template[]
      */
-    public function getTemplates(): array
+    public function templates(): array
     {
         return $this->templates;
     }
@@ -44,12 +47,29 @@ class TemplateDependencies extends Extension
      *
      * @return string[]
      */
-    public function getFiles(): array
+    public function files(): array
     {
-        return array_values(array_unique(array_map(
-            static fn (Template $template): string => $template->getName(),
-            $this->templates,
-        )));
+        return $this->filesFromTemplates($this->templates);
+    }
+
+    /**
+     * Returns the unique rendered template files that contain a {style} tag.
+     *
+     * @return string[]
+     */
+    public function filesWithStyle(): array
+    {
+        return $this->filesWithBlock(self::SfcStyleBlock);
+    }
+
+    /**
+     * Returns the unique rendered template files that contain a {script} tag.
+     *
+     * @return string[]
+     */
+    public function filesWithScript(): array
+    {
+        return $this->filesWithBlock(self::SfcScriptBlock);
     }
 
     /**
@@ -61,7 +81,7 @@ class TemplateDependencies extends Extension
      *
      * @return array<int, array{file: string, relation: string|null, children: array}>
      */
-    public function getTree(): array
+    public function tree(): array
     {
         $children = [];
         $roots = [];
@@ -81,6 +101,33 @@ class TemplateDependencies extends Extension
             fn (Template $template): array => $this->buildTree($template, $children),
             $roots,
         );
+    }
+
+    /**
+     * Returns unique file names for templates containing a specific block.
+     *
+     * @return string[]
+     */
+    protected function filesWithBlock(string $block): array
+    {
+        return $this->filesFromTemplates(array_filter(
+            $this->templates,
+            static fn (Template $template): bool => $template->hasBlock($block),
+        ));
+    }
+
+    /**
+     * Maps templates to unique file names while preserving render order.
+     *
+     * @param Template[] $templates
+     * @return string[]
+     */
+    protected function filesFromTemplates(array $templates): array
+    {
+        return array_values(array_unique(array_map(
+            static fn (Template $template): string => $template->getName(),
+            $templates,
+        )));
     }
 
     /**
