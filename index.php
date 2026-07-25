@@ -49,13 +49,10 @@ Kirby::plugin('jan-herman/barista', [
     ],
     'routes' => [
         [
-            // Block direct requests to Latte files, except Vite SFC requests.
+            // Block direct requests to Latte files, except in dev environment
             'pattern' => '(:all)\.latte',
             'action' => function ($all) {
-                if (
-                    kirby()->environment()->isLocal() &&
-                    kirby()->request()->query()->get('sfc') !== null
-                ) {
+                if (kirby()->environment()->isLocal()) {
                     $this->next();
                 }
 
