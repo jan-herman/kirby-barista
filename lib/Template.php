@@ -2,7 +2,6 @@
 
 namespace JanHerman\Barista;
 
-use JanHerman\Barista\Latte\TemplateDependencies;
 use Kirby\Filesystem\F;
 use Kirby\Template\Template as DefaultTemplate;
 

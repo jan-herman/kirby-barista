@@ -173,6 +173,171 @@ assertSameValue(
     json_encode($dependencies->tree()),
 );
 
+$pathDependencies = collectSfcDependencies([
+    'main' => '{include file "src/templates/layouts/base"}{include file "src/templates/partials/header"}{include file "src/templates/components-old/legacy"}',
+    'src/templates/layouts/base' => '{include file "src/templates/components/card"}',
+    'src/templates/components/card' => '{include file "src/templates/components/icons/star"}{style}.card{}{/style}',
+    'src/templates/components/icons/star' => '{style}.star{}{/style}',
+    'src/templates/partials/header' => '{script}header(){/script}',
+    'src/templates/components-old/legacy' => '{style}.legacy{}{/style}',
+]);
+
+$componentDependencies = $pathDependencies->filterBy(
+    'directory',
+    'src\\templates\\components\\',
+);
+
+assertSameValue(
+    'directory equality is recursive and normalizes separators',
+    '["src\/templates\/components\/card","src\/templates\/components\/icons\/star"]',
+    json_encode($componentDependencies->files()),
+);
+assertSameValue(
+    'directory filters apply to rendered templates',
+    '2',
+    (string) count($componentDependencies->templates()),
+);
+assertSameValue(
+    'filtered accessors share the same template snapshot',
+    '["src\/templates\/components\/card","src\/templates\/components\/icons\/star"]',
+    json_encode($componentDependencies->filesWithStyle()),
+);
+assertSameValue(
+    'directory boundaries do not match sibling prefixes',
+    'false',
+    json_encode(in_array(
+        'src/templates/components-old/legacy',
+        $componentDependencies->files(),
+        true,
+    )),
+);
+assertSameValue(
+    'directory inequality excludes only the selected subtree',
+    '["main","src\/templates\/components\/card","src\/templates\/components\/icons\/star","src\/templates\/partials\/header","src\/templates\/components-old\/legacy"]',
+    json_encode($pathDependencies->filterBy(
+        'directory',
+        '!=',
+        'src/templates/layouts',
+    )->files()),
+);
+assertSameValue(
+    'directory in accepts multiple subtrees',
+    '["src\/templates\/components\/card","src\/templates\/components\/icons\/star","src\/templates\/partials\/header"]',
+    json_encode($pathDependencies->filterBy(
+        'directory',
+        'in',
+        [
+            'src/templates/components',
+            'src/templates/partials',
+        ],
+    )->files()),
+);
+assertSameValue(
+    'directory filters apply to script dependencies',
+    '["src\/templates\/partials\/header"]',
+    json_encode($pathDependencies->filterBy(
+        'directory',
+        'src/templates/partials',
+    )->filesWithScript()),
+);
+assertSameValue(
+    'directory not in excludes multiple subtrees',
+    '["main","src\/templates\/components\/card","src\/templates\/components\/icons\/star","src\/templates\/partials\/header"]',
+    json_encode($pathDependencies->filterBy(
+        'directory',
+        'not in',
+        [
+            'src/templates/layouts',
+            'src/templates/components-old',
+        ],
+    )->files()),
+);
+assertSameValue(
+    'file equality uses normalized template identifiers',
+    '["src\/templates\/components\/card"]',
+    json_encode($pathDependencies->filterBy(
+        'file',
+        'src\\templates\\components\\card',
+    )->files()),
+);
+assertSameValue(
+    'file in accepts multiple identifiers',
+    '["src\/templates\/components\/card","src\/templates\/partials\/header"]',
+    json_encode($pathDependencies->filterBy(
+        'file',
+        'in',
+        [
+            'src/templates/components/card',
+            'src/templates/partials/header',
+        ],
+    )->files()),
+);
+assertSameValue(
+    'file not in excludes multiple identifiers',
+    '["main","src\/templates\/components\/card","src\/templates\/components\/icons\/star","src\/templates\/partials\/header"]',
+    json_encode($pathDependencies->filterBy(
+        'file',
+        'not in',
+        [
+            'src/templates/layouts/base',
+            'src/templates/components-old/legacy',
+        ],
+    )->files()),
+);
+assertSameValue(
+    'filters can be chained',
+    '["src\/templates\/components\/card"]',
+    json_encode($componentDependencies->filterBy(
+        'file',
+        '!=',
+        'src/templates/components/icons/star',
+    )->files()),
+);
+assertSameValue(
+    'callback filters receive Latte templates',
+    '["src\/templates\/components\/card","src\/templates\/components\/icons\/star"]',
+    json_encode($pathDependencies->filter(
+        static fn (Template $template): bool => str_contains(
+            $template->getName(),
+            '/components/',
+        ),
+    )->files()),
+);
+assertSameValue(
+    'filtering does not mutate the original collector',
+    '6',
+    (string) count($pathDependencies->templates()),
+);
+assertSameValue(
+    'filtered trees promote matching descendants to roots',
+    '[{"file":"src\/templates\/components\/card","relation":null,"children":[{"file":"src\/templates\/components\/icons\/star","relation":"include","children":[]}]}]',
+    json_encode($componentDependencies->tree()),
+);
+
+assertThrows(
+    'dependency filters reject unsupported fields',
+    'Unsupported template dependency field',
+    fn() => $pathDependencies->filterBy('block', 'style'),
+);
+assertThrows(
+    'dependency filters reject unsupported operators',
+    'Unsupported template dependency operator',
+    fn() => $pathDependencies->filterBy('file', '*=', 'components'),
+);
+assertThrows(
+    'dependency in filters require an array',
+    'in operator requires an array',
+    fn() => $pathDependencies->filterBy('file', 'in', 'main'),
+);
+assertThrows(
+    'dependency filters reject additional callback arguments',
+    'Callback filters do not accept additional arguments',
+    fn() => $pathDependencies->filter(
+        static fn (Template $template): bool => true,
+        'unexpected',
+    ),
+);
+
 assertThrows(
     'style requires a closing tag',
     '{/style}',
