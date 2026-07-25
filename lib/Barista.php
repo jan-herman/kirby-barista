@@ -5,7 +5,6 @@ namespace JanHerman\Barista;
 use JanHerman\Barista\Latte\FileLoader;
 use JanHerman\Barista\Latte\BaristaExtension;
 use JanHerman\Barista\Latte\TemplateDependencies;
-use JanHerman\Barista\Latte\ImplicitEmbedBlockExtension;
 use JanHerman\Barista\Latte\SfcExtension;
 use JanHerman\Barista\Latte\Translator;
 use Kirby\Cms\App as Kirby;
@@ -148,12 +147,6 @@ class Barista
      */
     protected function registerLatteExtensions(LatteEngine $latte): void
     {
-        if ($this->getOption('implicitEmbedBlock', true)) {
-            $latte->addExtension(new ImplicitEmbedBlockExtension(
-                $this->getOption('implicitEmbedBlockName', 'default'),
-            ));
-        }
-
         if ($this->getOption('sfc', false)) {
             $latte->addExtension(new SfcExtension());
         }

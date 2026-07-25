@@ -2,12 +2,14 @@
 
 ## Unreleased
 ### Added
-- opt-in runtime template dependency tracking via `Barista->collectTemplateDependencies()` and `Barista->templateDependencies()`
-- `TemplateDependencies->templates()`, `files()`, `tree()`, `filesWithStyle()`, and `filesWithScript()` methods
 - opt-in SFC `{style}` and `{script}` tags via the `sfc` option
+- opt-in runtime template dependency tracking with `Barista->templateDependencies()` via the `templateDependencies` option
 
 ### Changed
-- replace `LatteExtension` with `BaristaExtension` and `ImplicitEmbedBlockExtension`
+- replace `LatteExtension` with `BaristaExtension`
+
+### Removed
+- `ImplicitEmbedBlockExtension` - now in Latte core
 
 
 ## [1.16.2] - 2026-06-28
