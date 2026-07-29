@@ -4,6 +4,7 @@ namespace JanHerman\Barista;
 
 use JanHerman\Barista\Latte\FileLoader;
 use JanHerman\Barista\Latte\BaristaExtension;
+use JanHerman\Barista\Latte\CoreFiltersExtension;
 use JanHerman\Barista\Latte\TemplateDependencies;
 use JanHerman\Barista\Latte\SfcExtension;
 use JanHerman\Barista\Latte\Translator;
@@ -11,11 +12,15 @@ use Kirby\Cms\App as Kirby;
 use Kirby\Exception\Exception as KirbyException;
 use Kirby\Filesystem\Dir;
 use Latte\Engine as LatteEngine;
+use Latte\Essential\RawPhpExtension;
+use Latte\Extension as LatteExtension;
 use Latte\Feature;
 use Latte\Essential\TranslatorExtension;
 use Latte\Bridges\Tracy\TracyExtension;
 use Tracy\Debugger;
 use Exception;
+use InvalidArgumentException;
+use UnexpectedValueException;
 
 class Barista
 {
@@ -88,7 +93,7 @@ class Barista
     {
         if ($this->templateDependencies === null) {
             throw new \LogicException(
-                'Template dependency tracking is disabled. Set the jan-herman.barista.templateDependencies option to true.',
+                'Template dependency tracking is disabled. Set the jan-herman.barista.extensions.templateDependencies option to true.',
             );
         }
 
@@ -143,29 +148,100 @@ class Barista
     }
 
     /**
-     * Registers Barista, translator and optional Tracy extensions.
+     * Registers configured Latte extensions followed by Barista's custom extension.
      */
     protected function registerLatteExtensions(LatteEngine $latte): void
     {
-        if ($this->getOption('sfc', false)) {
-            $latte->addExtension(new SfcExtension());
+        $configuredExtensions = $this->getOption('extensions', []);
+
+        if (!is_array($configuredExtensions)) {
+            throw new InvalidArgumentException(
+                'The jan-herman.barista.extensions option must be an array.',
+            );
+        }
+
+        $factories = $this->latteExtensionFactories();
+
+        foreach ($configuredExtensions as $name => $configuredExtension) {
+            if (!is_string($name) || $name === '') {
+                throw new InvalidArgumentException(
+                    'Latte extension names in jan-herman.barista.extensions must be non-empty strings.',
+                );
+            }
+
+            if ($configuredExtension === false) {
+                continue;
+            }
+
+            if ($configuredExtension === true) {
+                if (!array_key_exists($name, $factories)) {
+                    throw new InvalidArgumentException(
+                        "Unknown built-in Latte extension '$name'. Provide a callable factory instead of true.",
+                    );
+                }
+
+                if ($factories[$name] === null) {
+                    continue;
+                }
+
+                $factory = $factories[$name];
+            } elseif (is_callable($configuredExtension)) {
+                $factory = $configuredExtension;
+            } else {
+                throw new InvalidArgumentException(
+                    "The jan-herman.barista.extensions.$name option must be a boolean or callable.",
+                );
+            }
+
+            $extension = $factory($this->kirby);
+
+            if (!$extension instanceof LatteExtension) {
+                throw new UnexpectedValueException(
+                    "The jan-herman.barista.extensions.$name factory must return an instance of Latte\\Extension.",
+                );
+            }
+
+            if (
+                $name === 'templateDependencies'
+                && !$extension instanceof TemplateDependencies
+            ) {
+                throw new UnexpectedValueException(
+                    'The jan-herman.barista.extensions.templateDependencies factory must return an instance of '
+                    . TemplateDependencies::class . '.',
+                );
+            }
+
+            if ($extension instanceof TemplateDependencies) {
+                $this->templateDependencies = $extension;
+            }
+
+            $latte->addExtension($extension);
         }
 
         $latte->addExtension(new BaristaExtension());
+    }
 
-        if ($this->getOption('templateDependencies', false)) {
-            $this->templateDependencies = new TemplateDependencies();
-            $latte->addExtension($this->templateDependencies);
-        }
+    /**
+     * Returns factories for Barista's built-in Latte extensions.
+     *
+     * @return array<string, (callable(Kirby): LatteExtension)|null>
+     */
+    protected function latteExtensionFactories(): array
+    {
+        return [
+            'translator' => static function (Kirby $kirby): LatteExtension {
+                $translator = new Translator($kirby->language()?->code() ?? 'en');
 
-        $lang = $this->kirby->language()?->code() ?? 'en';
-        $translator = new Translator($lang);
-        $translatorExtension = new TranslatorExtension([$translator, 'translate']);
-        $latte->addExtension($translatorExtension);
-
-        if ($this->isTracyInstalled) {
-            $latte->addExtension(new TracyExtension());
-        }
+                return new TranslatorExtension([$translator, 'translate']);
+            },
+            'coreFilters' => static fn (Kirby $kirby): LatteExtension => new CoreFiltersExtension(),
+            'sfc' => static fn (Kirby $kirby): LatteExtension => new SfcExtension(),
+            'templateDependencies' => static fn (Kirby $kirby): LatteExtension => new TemplateDependencies(),
+            'tracy' => $this->isTracyInstalled
+                ? static fn (Kirby $kirby): LatteExtension => new TracyExtension()
+                : null,
+            'rawPhp' => static fn (Kirby $kirby): LatteExtension => new RawPhpExtension(),
+        ];
     }
 
     /**

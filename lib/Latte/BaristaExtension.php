@@ -13,12 +13,7 @@ class BaristaExtension extends Extension
 
     public function getFilters(): array
     {
-        $customFilters = option('jan-herman.barista.filters', []);
-        $builtInFilters = [
-            'stripNewLines' => Filters::stripNewLines(...),
-        ];
-
-        return array_merge($builtInFilters, $customFilters);
+        return option('jan-herman.barista.filters', []);
     }
 
     public function getFunctions(): array

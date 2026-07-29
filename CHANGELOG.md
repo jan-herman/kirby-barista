@@ -2,11 +2,14 @@
 
 ## Unreleased
 ### Added
-- opt-in SFC `{style}` and `{script}` tags via the `sfc` option
-- opt-in runtime template dependency tracking with `Barista->templateDependencies()` via the `templateDependencies` option
+- configurable Latte extension registry via the `extensions` option
+- opt-in SFC `{style}` and `{script}` tags via the `extensions.sfc` option
+- opt-in runtime template dependency tracking with `Barista->templateDependencies()` via the `extensions.templateDependencies` option
+- opt-in raw `{php ...}` tags via the `extensions.rawPhp` option
 
 ### Changed
 - replace `LatteExtension` with `BaristaExtension`
+- move built-in filters from `BaristaExtension` to `CoreFiltersExtension`
 
 ### Removed
 - `ImplicitEmbedBlockExtension` - now in Latte core

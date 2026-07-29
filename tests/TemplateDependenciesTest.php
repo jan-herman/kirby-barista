@@ -72,8 +72,10 @@ $kirby = new App([
     ],
     'options' => [
         'jan-herman.barista.cacheDirectory' => $base . '/cache',
-        'jan-herman.barista.sfc' => true,
-        'jan-herman.barista.templateDependencies' => true,
+        'jan-herman.barista.extensions' => [
+            'sfc' => true,
+            'templateDependencies' => true,
+        ],
     ],
 ]);
 
