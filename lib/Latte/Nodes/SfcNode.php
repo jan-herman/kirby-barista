@@ -19,7 +19,6 @@ use Latte\Runtime\Template;
 abstract class SfcNode extends StatementNode
 {
     protected const Languages = [];
-    protected const Type = '';
 
     protected Tag $tag;
 
@@ -64,8 +63,7 @@ abstract class SfcNode extends StatementNode
      */
     public function print(PrintContext $context): string
     {
-        $type = $this::Type;
-        $blockName = "__sfc_{$type}";
+        $blockName = $this::BlockName;
 
         foreach ($context->blocks as $registeredBlock) {
             if (

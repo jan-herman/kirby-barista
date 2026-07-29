@@ -2,6 +2,8 @@
 
 use JanHerman\Barista\Latte\SfcExtension;
 use JanHerman\Barista\Latte\TemplateDependencies;
+use JanHerman\Barista\Latte\Nodes\ScriptNode;
+use JanHerman\Barista\Latte\Nodes\StyleNode;
 use Latte\Engine;
 use Latte\Loaders\StringLoader;
 use Latte\Runtime\Template;
@@ -98,6 +100,9 @@ function assertThrows(string $label, string $expectedMessage, callable $callback
     exit(1);
 }
 
+assertSameValue('script block name constant', '__sfc_script', ScriptNode::BlockName);
+assertSameValue('style block name constant', '__sfc_style', StyleNode::BlockName);
+
 foreach ([
     'style without lang' => '{style}SFC_STYLE_DEFAULT{/style}',
     'style with css' => "{style lang: 'css'}SFC_STYLE_CSS{/style}",
@@ -128,11 +133,12 @@ $metadataTemplate = compileSfcTemplate(
     '{style}a{/style}{script}a(){/script}{style}b{/style}{script}b(){/script}',
 );
 
-assertContains('compiled template records a style marker', '__sfc_style', $metadataTemplate);
-assertContains('compiled template records a script marker', '__sfc_script', $metadataTemplate);
-assertNotContains('compiled template does not index style markers', '__sfc_style_0', $metadataTemplate);
-assertNotContains('compiled template does not index script markers', '__sfc_script_0', $metadataTemplate);
-assertNotContains('compiled template does not render SFC metadata blocks', "renderBlock('__sfc_", $metadataTemplate);
+assertContains('compiled template records a style marker', StyleNode::BlockName, $metadataTemplate);
+assertContains('compiled template records a script marker', ScriptNode::BlockName, $metadataTemplate);
+assertNotContains('compiled template does not index style markers', StyleNode::BlockName . '_0', $metadataTemplate);
+assertNotContains('compiled template does not index script markers', ScriptNode::BlockName . '_0', $metadataTemplate);
+assertNotContains('compiled template does not render style metadata blocks', "renderBlock('" . StyleNode::BlockName, $metadataTemplate);
+assertNotContains('compiled template does not render script metadata blocks', "renderBlock('" . ScriptNode::BlockName, $metadataTemplate);
 
 $dependencies = collectSfcDependencies([
     'main' => '{include file "style"}{include file "script"}{include file "both"}{include file "plain"}{include file "style"}',
@@ -164,7 +170,7 @@ assertSameValue(
 );
 assertSameValue(
     'SFC metadata blocks use the local block layer',
-    '["__sfc_style","__sfc_script"]',
+    json_encode([StyleNode::BlockName, ScriptNode::BlockName]),
     json_encode($dependencies->templates()[3]->getBlockNames(Template::LayerLocal)),
 );
 assertSameValue(

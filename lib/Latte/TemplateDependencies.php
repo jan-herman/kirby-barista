@@ -4,6 +4,8 @@ namespace JanHerman\Barista\Latte;
 
 use Closure;
 use InvalidArgumentException;
+use JanHerman\Barista\Latte\Nodes\ScriptNode;
+use JanHerman\Barista\Latte\Nodes\StyleNode;
 use Latte\Extension;
 use Latte\Runtime\Template;
 
@@ -12,9 +14,6 @@ use Latte\Runtime\Template;
  */
 class TemplateDependencies extends Extension
 {
-    protected const SfcScriptBlock = '__sfc_script';
-    protected const SfcStyleBlock = '__sfc_style';
-
     /** @var Template[] */
     protected array $templates = [];
 
@@ -139,7 +138,7 @@ class TemplateDependencies extends Extension
      */
     public function filesWithStyle(): array
     {
-        return $this->filesWithBlock(self::SfcStyleBlock);
+        return $this->filesWithBlock(StyleNode::BlockName);
     }
 
     /**
@@ -149,7 +148,7 @@ class TemplateDependencies extends Extension
      */
     public function filesWithScript(): array
     {
-        return $this->filesWithBlock(self::SfcScriptBlock);
+        return $this->filesWithBlock(ScriptNode::BlockName);
     }
 
     /**
