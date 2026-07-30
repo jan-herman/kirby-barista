@@ -50,6 +50,7 @@ foreach ([
 
 $parameterizedTemplate = $templates . '/parameterized.latte';
 $optionalTemplate = $templates . '/optional.latte';
+$mixedTemplate = $templates . '/mixed.latte';
 
 file_put_contents(
     $parameterizedTemplate,
@@ -58,6 +59,10 @@ file_put_contents(
 file_put_contents(
     $optionalTemplate,
     '<p>Optional</p>{script}optional(){/script}',
+);
+file_put_contents(
+    $mixedTemplate,
+    '{style}.eager{}{/style}{style lazy}.lazy{}{/style}{script}eager(){/script}{script lazy}lazy(){/script}',
 );
 
 App::destroy();
@@ -101,6 +106,16 @@ assertSameValue(
     $dependencies->filesWithStyle(),
 );
 assertSameValue(
+    'collection exposes templates containing eager style tags',
+    [$parameterizedTemplate],
+    $dependencies->filesWithStyle('eager'),
+);
+assertSameValue(
+    'collection exposes no lazy style files when none were rendered',
+    [],
+    $dependencies->filesWithStyle('lazy'),
+);
+assertSameValue(
     'collection exposes no script files when none were rendered',
     [],
     $dependencies->filesWithScript(),
@@ -122,6 +137,49 @@ assertSameValue(
     'the current collector is available without rendering again',
     [$optionalTemplate],
     $barista->templateDependencies()->filesWithScript(),
+);
+assertSameValue(
+    'collection exposes templates containing eager script tags',
+    [$optionalTemplate],
+    $optionalDependencies->filesWithScript('eager'),
+);
+assertSameValue(
+    'collection exposes no lazy script files when none were rendered',
+    [],
+    $optionalDependencies->filesWithScript('lazy'),
+);
+
+$mixedDependencies = $barista->collectTemplateDependencies($mixedTemplate);
+
+assertSameValue(
+    'mixed styles are returned without a loading filter',
+    [$mixedTemplate],
+    $mixedDependencies->filesWithStyle(),
+);
+assertSameValue(
+    'mixed styles participate in the eager filter',
+    [$mixedTemplate],
+    $mixedDependencies->filesWithStyle('eager'),
+);
+assertSameValue(
+    'mixed styles participate in the lazy filter',
+    [$mixedTemplate],
+    $mixedDependencies->filesWithStyle('lazy'),
+);
+assertSameValue(
+    'mixed scripts are returned without a loading filter',
+    [$mixedTemplate],
+    $mixedDependencies->filesWithScript(),
+);
+assertSameValue(
+    'mixed scripts participate in the eager filter',
+    [$mixedTemplate],
+    $mixedDependencies->filesWithScript('eager'),
+);
+assertSameValue(
+    'mixed scripts participate in the lazy filter',
+    [$mixedTemplate],
+    $mixedDependencies->filesWithScript('lazy'),
 );
 
 echo "All template dependency tests passed.\n";

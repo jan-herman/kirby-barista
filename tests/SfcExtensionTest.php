@@ -101,15 +101,25 @@ function assertThrows(string $label, string $expectedMessage, callable $callback
 }
 
 assertSameValue('script block name constant', '__sfc_script', ScriptNode::BlockName);
+assertSameValue('eager script block name constant', '__sfc_script_eager', ScriptNode::EagerBlockName);
+assertSameValue('lazy script block name constant', '__sfc_script_lazy', ScriptNode::LazyBlockName);
 assertSameValue('style block name constant', '__sfc_style', StyleNode::BlockName);
+assertSameValue('eager style block name constant', '__sfc_style_eager', StyleNode::EagerBlockName);
+assertSameValue('lazy style block name constant', '__sfc_style_lazy', StyleNode::LazyBlockName);
 
 foreach ([
     'style without lang' => '{style}SFC_STYLE_DEFAULT{/style}',
     'style with css' => "{style lang: 'css'}SFC_STYLE_CSS{/style}",
     'style with scss' => "{style lang: 'scss'}SFC_STYLE_SCSS{/style}",
+    'style with lazy flag' => '{style lazy}SFC_STYLE_LAZY_FLAG{/style}',
+    'style with lazy true' => '{style lazy: true}SFC_STYLE_LAZY_TRUE{/style}',
+    'style with lazy false' => '{style lazy: false}SFC_STYLE_LAZY_FALSE{/style}',
     'script without lang' => '{script}SFC_SCRIPT_DEFAULT{/script}',
     'script with js' => "{script lang: 'js'}SFC_SCRIPT_JS{/script}",
     'script with ts' => "{script lang: 'ts'}SFC_SCRIPT_TS{/script}",
+    'script with lazy flag' => '{script lazy}SFC_SCRIPT_LAZY_FLAG{/script}',
+    'script with lazy true' => '{script lazy: true}SFC_SCRIPT_LAZY_TRUE{/script}',
+    'script with lazy false' => '{script lazy: false}SFC_SCRIPT_LAZY_FALSE{/script}',
     'style with ignored properties' => "{style scoped: true, media: 'print', lang: 'scss', lang: 'css'}SFC_STYLE_PROPERTIES{/style}",
     'script with ignored positional property' => "{script 'module', defer: true, source: \$source}SFC_SCRIPT_PROPERTIES{/script}",
 ] as $label => $block) {
@@ -134,7 +144,11 @@ $metadataTemplate = compileSfcTemplate(
 );
 
 assertContains('compiled template records a style marker', StyleNode::BlockName, $metadataTemplate);
+assertContains('compiled template records an eager style marker', StyleNode::EagerBlockName, $metadataTemplate);
+assertNotContains('compiled eager template omits a lazy style marker', StyleNode::LazyBlockName, $metadataTemplate);
 assertContains('compiled template records a script marker', ScriptNode::BlockName, $metadataTemplate);
+assertContains('compiled template records an eager script marker', ScriptNode::EagerBlockName, $metadataTemplate);
+assertNotContains('compiled eager template omits a lazy script marker', ScriptNode::LazyBlockName, $metadataTemplate);
 assertNotContains('compiled template does not index style markers', StyleNode::BlockName . '_0', $metadataTemplate);
 assertNotContains('compiled template does not index script markers', ScriptNode::BlockName . '_0', $metadataTemplate);
 assertNotContains('compiled template does not render style metadata blocks', "renderBlock('" . StyleNode::BlockName, $metadataTemplate);
@@ -170,13 +184,87 @@ assertSameValue(
 );
 assertSameValue(
     'SFC metadata blocks use the local block layer',
-    json_encode([StyleNode::BlockName, ScriptNode::BlockName]),
+    json_encode([
+        StyleNode::BlockName,
+        StyleNode::EagerBlockName,
+        ScriptNode::BlockName,
+        ScriptNode::EagerBlockName,
+    ]),
     json_encode($dependencies->templates()[3]->getBlockNames(Template::LayerLocal)),
 );
 assertSameValue(
     'dependencies returns the runtime tree',
     '[{"file":"main","relation":null,"children":[{"file":"style","relation":"include","children":[]},{"file":"script","relation":"include","children":[]},{"file":"both","relation":"include","children":[]},{"file":"plain","relation":"include","children":[]},{"file":"style","relation":"include","children":[]}]}]',
     json_encode($dependencies->tree()),
+);
+
+$loadingDependencies = collectSfcDependencies([
+    'main' => '{include file "style-eager"}{include file "style-lazy"}{include file "style-mixed"}{include file "script-eager"}{include file "script-lazy"}{include file "script-mixed"}',
+    'style-eager' => '{style}.style-eager{}{/style}',
+    'style-lazy' => '{style lazy}.style-lazy{}{/style}',
+    'style-mixed' => '{style lazy: false}.style-mixed-eager{}{/style}{style lazy: true}.style-mixed-lazy{}{/style}',
+    'script-eager' => '{script}scriptEager(){/script}',
+    'script-lazy' => '{script lazy}scriptLazy(){/script}',
+    'script-mixed' => '{script lazy: false}scriptMixedEager(){/script}{script lazy: true}scriptMixedLazy(){/script}',
+]);
+
+assertSameValue(
+    'style dependencies include every loading mode by default',
+    '["style-eager","style-lazy","style-mixed"]',
+    json_encode($loadingDependencies->filesWithStyle()),
+);
+assertSameValue(
+    'style dependencies filter eager blocks',
+    '["style-eager","style-mixed"]',
+    json_encode($loadingDependencies->filesWithStyle('eager')),
+);
+assertSameValue(
+    'style dependencies filter lazy blocks',
+    '["style-lazy","style-mixed"]',
+    json_encode($loadingDependencies->filesWithStyle('lazy')),
+);
+assertSameValue(
+    'script dependencies include every loading mode by default',
+    '["script-eager","script-lazy","script-mixed"]',
+    json_encode($loadingDependencies->filesWithScript()),
+);
+assertSameValue(
+    'script dependencies filter eager blocks',
+    '["script-eager","script-mixed"]',
+    json_encode($loadingDependencies->filesWithScript('eager')),
+);
+assertSameValue(
+    'script dependencies filter lazy blocks',
+    '["script-lazy","script-mixed"]',
+    json_encode($loadingDependencies->filesWithScript('lazy')),
+);
+assertSameValue(
+    'mixed style metadata records both loading modes',
+    json_encode([
+        StyleNode::BlockName,
+        StyleNode::EagerBlockName,
+        StyleNode::LazyBlockName,
+    ]),
+    json_encode($loadingDependencies->templates()[3]->getBlockNames(Template::LayerLocal)),
+);
+assertSameValue(
+    'mixed script metadata records both loading modes',
+    json_encode([
+        ScriptNode::BlockName,
+        ScriptNode::EagerBlockName,
+        ScriptNode::LazyBlockName,
+    ]),
+    json_encode($loadingDependencies->templates()[6]->getBlockNames(Template::LayerLocal)),
+);
+assertThrows(
+    'style dependencies reject unsupported loading modes',
+    'Unsupported SFC loading mode: deferred',
+    fn() => $loadingDependencies->filesWithStyle('deferred'),
+);
+assertThrows(
+    'script dependencies reject unsupported loading modes',
+    'Unsupported SFC loading mode: deferred',
+    fn() => $loadingDependencies->filesWithScript('deferred'),
 );
 
 $pathDependencies = collectSfcDependencies([
@@ -426,6 +514,36 @@ assertThrows(
     'unsupported script language is rejected',
     "Unsupported lang 'tsx'",
     fn() => compileSfcTemplate("{script lang: 'tsx'}{/script}"),
+);
+
+assertThrows(
+    'dynamic lazy is rejected',
+    'must be a bare flag or a static boolean',
+    fn() => compileSfcTemplate('{style lazy: $lazy}a{/style}'),
+);
+
+assertThrows(
+    'quoted lazy boolean is rejected',
+    'must be a bare flag or a static boolean',
+    fn() => compileSfcTemplate("{script lazy: 'true'}a(){/script}"),
+);
+
+assertThrows(
+    'numeric lazy is rejected',
+    'must be a bare flag or a static boolean',
+    fn() => compileSfcTemplate('{style lazy: 1}a{/style}'),
+);
+
+assertThrows(
+    'quoted lazy flag is rejected',
+    'must be a bare flag or a static boolean',
+    fn() => compileSfcTemplate("{style 'lazy'}a{/style}"),
+);
+
+assertThrows(
+    'duplicate lazy is rejected',
+    'must not be declared more than once',
+    fn() => compileSfcTemplate('{script lazy, lazy: true}a(){/script}'),
 );
 
 echo "All SFC extension tests passed.\n";

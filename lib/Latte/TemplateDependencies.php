@@ -132,23 +132,35 @@ class TemplateDependencies extends Extension
     }
 
     /**
-     * Returns the unique rendered template files that contain a {style} tag.
+     * Returns unique rendered template files containing matching {style} tags.
      *
+     * @param 'eager'|'lazy'|null $loading
      * @return string[]
      */
-    public function filesWithStyle(): array
+    public function filesWithStyle(?string $loading = null): array
     {
-        return $this->filesWithBlock(StyleNode::BlockName);
+        return $this->filesWithAssetBlock(
+            StyleNode::BlockName,
+            StyleNode::EagerBlockName,
+            StyleNode::LazyBlockName,
+            $loading,
+        );
     }
 
     /**
-     * Returns the unique rendered template files that contain a {script} tag.
+     * Returns unique rendered template files containing matching {script} tags.
      *
+     * @param 'eager'|'lazy'|null $loading
      * @return string[]
      */
-    public function filesWithScript(): array
+    public function filesWithScript(?string $loading = null): array
     {
-        return $this->filesWithBlock(ScriptNode::BlockName);
+        return $this->filesWithAssetBlock(
+            ScriptNode::BlockName,
+            ScriptNode::EagerBlockName,
+            ScriptNode::LazyBlockName,
+            $loading,
+        );
     }
 
     /**
@@ -276,6 +288,29 @@ class TemplateDependencies extends Extension
             $this->templates,
             static fn (Template $template): bool => $template->hasBlock($block),
         ));
+    }
+
+    /**
+     * Resolves an optional loading mode to its compiled SFC metadata block.
+     *
+     * @return string[]
+     */
+    protected function filesWithAssetBlock(
+        string $block,
+        string $eagerBlock,
+        string $lazyBlock,
+        ?string $loading,
+    ): array {
+        $block = match ($loading) {
+            null => $block,
+            'eager' => $eagerBlock,
+            'lazy' => $lazyBlock,
+            default => throw new InvalidArgumentException(
+                "Unsupported SFC loading mode: $loading",
+            ),
+        };
+
+        return $this->filesWithBlock($block);
     }
 
     /**

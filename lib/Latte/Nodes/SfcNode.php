@@ -7,6 +7,7 @@ use Latte\CompileException;
 use Latte\Compiler\Block;
 use Latte\Compiler\Nodes\FragmentNode;
 use Latte\Compiler\Nodes\Php\IdentifierNode;
+use Latte\Compiler\Nodes\Php\Scalar\BooleanNode;
 use Latte\Compiler\Nodes\Php\Scalar\StringNode;
 use Latte\Compiler\Nodes\StatementNode;
 use Latte\Compiler\Nodes\TextNode;
@@ -21,6 +22,7 @@ abstract class SfcNode extends StatementNode
     protected const Languages = [];
 
     protected Tag $tag;
+    protected bool $lazy = false;
 
     /** @return Generator<int, ?list<string>, array{mixed, ?Tag}, static> */
     public static function create(Tag $tag, TemplateParser $parser): Generator
@@ -33,10 +35,11 @@ abstract class SfcNode extends StatementNode
             throw new CompileException("Tag {{$tag->name}/} must be paired with {{$tag->name}}.", $tag->position);
         }
 
-        static::validateProperties($tag);
+        $lazy = static::validateProperties($tag);
         $tag->outputMode = $tag::OutputRemoveIndentation;
         $node = $tag->node = new static;
         $node->tag = $tag;
+        $node->lazy = $lazy;
 
         $lexer = $parser->getLexer();
         $lexer->setSyntax('off', $tag->name);
@@ -63,15 +66,27 @@ abstract class SfcNode extends StatementNode
      */
     public function print(PrintContext $context): string
     {
-        $blockName = $this::BlockName;
+        $this->registerBlock($context, $this::BlockName);
+        $this->registerBlock(
+            $context,
+            $this::BlockName . ($this->lazy ? '_lazy' : '_eager'),
+        );
 
+        return '';
+    }
+
+    /**
+     * Registers one empty local metadata block unless it already exists.
+     */
+    private function registerBlock(PrintContext $context, string $blockName): void
+    {
         foreach ($context->blocks as $registeredBlock) {
             if (
                 $registeredBlock->layer === Template::LayerLocal
                 && $registeredBlock->name instanceof StringNode
                 && $registeredBlock->name->value === $blockName
             ) {
-                return '';
+                return;
             }
         }
 
@@ -83,8 +98,6 @@ abstract class SfcNode extends StatementNode
 
         $context->addBlock($block);
         $block->content = '';
-
-        return '';
     }
 
     public function &getIterator(): Generator
@@ -92,12 +105,52 @@ abstract class SfcNode extends StatementNode
         false && yield;
     }
 
-    private static function validateProperties(Tag $tag): void
+    private static function validateProperties(Tag $tag): bool
     {
         $properties = $tag->parser->parseArguments();
+        $lazy = false;
+        $hasLazyProperty = false;
 
         foreach ($properties->items as $property) {
-            if (!$property->key instanceof IdentifierNode || $property->key->name !== 'lang') {
+            $isPositionalLazy = $property->key === null
+                && $property->value instanceof StringNode
+                && $property->value->value === 'lazy';
+            $isBareLazy = $isPositionalLazy
+                && static::propertySource($tag, $property->value) === 'lazy';
+            $isQuotedLazy = $isPositionalLazy && !$isBareLazy;
+            $isNamedLazy = $property->key instanceof IdentifierNode
+                && $property->key->name === 'lazy';
+
+            if ($isBareLazy || $isQuotedLazy || $isNamedLazy) {
+                if ($hasLazyProperty) {
+                    throw new CompileException(
+                        "The lazy property in {{$tag->name}} must not be declared more than once.",
+                        $property->position,
+                    );
+                }
+
+                $hasLazyProperty = true;
+
+                if ($isBareLazy) {
+                    $lazy = true;
+                    continue;
+                }
+
+                if (!$isNamedLazy || !$property->value instanceof BooleanNode) {
+                    throw new CompileException(
+                        "The lazy property in {{$tag->name}} must be a bare flag or a static boolean.",
+                        $property->value->position,
+                    );
+                }
+
+                $lazy = $property->value->value;
+                continue;
+            }
+
+            if (
+                !$property->key instanceof IdentifierNode
+                || $property->key->name !== 'lang'
+            ) {
                 continue;
             }
 
@@ -113,6 +166,24 @@ abstract class SfcNode extends StatementNode
                 );
             }
         }
+
+        return $lazy;
+    }
+
+    /**
+     * Returns the exact source represented by one parsed property value.
+     */
+    private static function propertySource(Tag $tag, StringNode $value): string
+    {
+        if ($value->position === null || $value->end === null) {
+            return '';
+        }
+
+        return substr(
+            $tag->getNotation(true),
+            $value->position->offset - $tag->position->offset,
+            $value->end->offset - $value->position->offset,
+        );
     }
 
     private static function validateContent(Tag $tag, FragmentNode $content): void
