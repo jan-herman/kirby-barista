@@ -6,8 +6,11 @@ use Generator;
 use Latte\CompileException;
 use Latte\Compiler\Block;
 use Latte\Compiler\Nodes\FragmentNode;
+use Latte\Compiler\Nodes\Php\ArrayItemNode;
+use Latte\Compiler\Nodes\Php\Expression\ArrayNode;
 use Latte\Compiler\Nodes\Php\IdentifierNode;
 use Latte\Compiler\Nodes\Php\Scalar\BooleanNode;
+use Latte\Compiler\Nodes\Php\Scalar\NullNode;
 use Latte\Compiler\Nodes\Php\Scalar\StringNode;
 use Latte\Compiler\Nodes\StatementNode;
 use Latte\Compiler\Nodes\TextNode;
@@ -24,7 +27,11 @@ abstract class SfcNode extends StatementNode
     protected Tag $tag;
     protected bool $lazy = false;
 
-    /** @return Generator<int, ?list<string>, array{mixed, ?Tag}, static> */
+    /**
+     * Parses and validates an SFC tag while preserving its metadata.
+     *
+     * @return Generator<int, ?list<string>, array{mixed, ?Tag}, static>
+     */
     public static function create(Tag $tag, TemplateParser $parser): Generator
     {
         if ($tag->isNAttribute()) {
@@ -35,11 +42,13 @@ abstract class SfcNode extends StatementNode
             throw new CompileException("Tag {{$tag->name}/} must be paired with {{$tag->name}}.", $tag->position);
         }
 
-        $lazy = static::validateProperties($tag);
+        $properties = $tag->parser->parseArguments();
+        static::validateProperties($tag, $properties);
+
         $tag->outputMode = $tag::OutputRemoveIndentation;
         $node = $tag->node = new static;
         $node->tag = $tag;
-        $node->lazy = $lazy;
+        $node->lazy = static::isLazy($tag, $properties);
 
         $lexer = $parser->getLexer();
         $lexer->setSyntax('off', $tag->name);
@@ -69,7 +78,7 @@ abstract class SfcNode extends StatementNode
         $this->registerBlock($context, $this::BlockName);
         $this->registerBlock(
             $context,
-            $this::BlockName . ($this->lazy ? '_lazy' : '_eager'),
+            $this->lazy ? $this::LazyBlockName : $this::EagerBlockName,
         );
 
         return '';
@@ -100,74 +109,161 @@ abstract class SfcNode extends StatementNode
         $block->content = '';
     }
 
+    /**
+     * Exposes no child nodes because SFC content is removed during parsing.
+     */
     public function &getIterator(): Generator
     {
         false && yield;
     }
 
-    private static function validateProperties(Tag $tag): bool
+    /**
+     * Rejects duplicate properties and dispatches each one to its validator.
+     */
+    private static function validateProperties(Tag $tag, ArrayNode $properties): void
     {
-        $properties = $tag->parser->parseArguments();
-        $lazy = false;
-        $hasLazyProperty = false;
+        $declaredProperties = [];
 
         foreach ($properties->items as $property) {
-            $isPositionalLazy = $property->key === null
-                && $property->value instanceof StringNode
-                && $property->value->value === 'lazy';
-            $isBareLazy = $isPositionalLazy
-                && static::propertySource($tag, $property->value) === 'lazy';
-            $isQuotedLazy = $isPositionalLazy && !$isBareLazy;
-            $isNamedLazy = $property->key instanceof IdentifierNode
-                && $property->key->name === 'lazy';
+            $propertyIsFlag = static::propertyIsFlag($tag, $property);
 
-            if ($isBareLazy || $isQuotedLazy || $isNamedLazy) {
-                if ($hasLazyProperty) {
-                    throw new CompileException(
-                        "The lazy property in {{$tag->name}} must not be declared more than once.",
-                        $property->position,
-                    );
-                }
-
-                $hasLazyProperty = true;
-
-                if ($isBareLazy) {
-                    $lazy = true;
-                    continue;
-                }
-
-                if (!$isNamedLazy || !$property->value instanceof BooleanNode) {
-                    throw new CompileException(
-                        "The lazy property in {{$tag->name}} must be a bare flag or a static boolean.",
-                        $property->value->position,
-                    );
-                }
-
-                $lazy = $property->value->value;
+            if ($property->key instanceof IdentifierNode) {
+                $propertyName = $property->key->name;
+            } elseif ($propertyIsFlag) {
+                $propertyName = $property->value->value;
+            } else {
                 continue;
+            }
+
+            if ($propertyIsFlag && $propertyName !== 'lazy') {
+                throw new CompileException(
+                    "The $propertyName property in {{$tag->name}} must have a value.",
+                    $property->position,
+                );
+            }
+
+            if (!in_array($propertyName, ['lazy', 'layer', 'lang'], true)) {
+                continue;
+            }
+
+            if (isset($declaredProperties[$propertyName])) {
+                throw new CompileException(
+                    "The $propertyName property in {{$tag->name}} must not be declared more than once.",
+                    $property->position,
+                );
+            }
+
+            $declaredProperties[$propertyName] = true;
+
+            if ($propertyIsFlag) {
+                continue;
+            }
+
+            match ($propertyName) {
+                'lazy' => static::validateLazyProperty($tag, $property),
+                'layer' => static::validateLayerProperty($tag, $property),
+                'lang' => static::validateLangProperty($tag, $property),
+            };
+        }
+    }
+
+    /**
+     * Validates one lazy property.
+     */
+    private static function validateLazyProperty(
+        Tag $tag,
+        ArrayItemNode $property,
+    ): void {
+        if (!$property->value instanceof BooleanNode) {
+            throw new CompileException(
+                "The lazy property in {{$tag->name}} must be a bare flag or a static boolean.",
+                $property->value->position,
+            );
+        }
+    }
+
+    /**
+     * Validates one style layer property.
+     */
+    private static function validateLayerProperty(
+        Tag $tag,
+        ArrayItemNode $property,
+    ): void {
+        if ($tag->name !== 'style') {
+            throw new CompileException(
+                "The layer property is only supported in {style}.",
+                $property->position,
+            );
+        }
+
+        if (
+            !$property->value instanceof StringNode
+            && !$property->value instanceof NullNode
+        ) {
+            throw new CompileException(
+                "The layer property in {{$tag->name}} must be a static string or null.",
+                $property->value->position,
+            );
+        }
+    }
+
+    /**
+     * Validates one language property against the node's supported languages.
+     */
+    private static function validateLangProperty(Tag $tag, ArrayItemNode $property): void
+    {
+        if (!$property->value instanceof StringNode) {
+            throw new CompileException("The lang property in {{$tag->name}} must be a static string.", $property->value->position);
+        }
+
+        if (!in_array($property->value->value, static::Languages, true)) {
+            $languages = implode("', '", static::Languages);
+            throw new CompileException(
+                "Unsupported lang '{$property->value->value}' in {{$tag->name}}. Allowed values are '$languages'.",
+                $property->value->position,
+            );
+        }
+    }
+
+    /**
+     * Returns the validated lazy state, defaulting to eager loading.
+     */
+    private static function isLazy(Tag $tag, ArrayNode $properties): bool
+    {
+        foreach ($properties->items as $property) {
+            if (
+                static::propertyIsFlag($tag, $property)
+                && $property->value->value === 'lazy'
+            ) {
+                return true;
             }
 
             if (
-                !$property->key instanceof IdentifierNode
-                || $property->key->name !== 'lang'
+                $property->key instanceof IdentifierNode
+                && $property->key->name === 'lazy'
             ) {
-                continue;
-            }
-
-            if (!$property->value instanceof StringNode) {
-                throw new CompileException("The lang property in {{$tag->name}} must be a static string.", $property->value->position);
-            }
-
-            if (!in_array($property->value->value, static::Languages, true)) {
-                $languages = implode("', '", static::Languages);
-                throw new CompileException(
-                    "Unsupported lang '{$property->value->value}' in {{$tag->name}}. Allowed values are '$languages'.",
-                    $property->value->position,
-                );
+                return $property->value instanceof BooleanNode
+                    && $property->value->value;
             }
         }
 
-        return $lazy;
+        return false;
+    }
+
+    /**
+     * Checks whether a property uses unquoted flag syntax.
+     */
+    private static function propertyIsFlag(Tag $tag, ArrayItemNode $property): bool
+    {
+        if (
+            $property->key !== null
+            || !$property->value instanceof StringNode
+        ) {
+            return false;
+        }
+
+        return static::propertySource($tag, $property->value)
+            === $property->value->value;
     }
 
     /**
@@ -186,6 +282,9 @@ abstract class SfcNode extends StatementNode
         );
     }
 
+    /**
+     * Ensures the SFC block contains meaningful source content.
+     */
     private static function validateContent(Tag $tag, FragmentNode $content): void
     {
         foreach ($content->children as $child) {

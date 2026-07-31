@@ -111,6 +111,10 @@ foreach ([
     'style without lang' => '{style}SFC_STYLE_DEFAULT{/style}',
     'style with css' => "{style lang: 'css'}SFC_STYLE_CSS{/style}",
     'style with scss' => "{style lang: 'scss'}SFC_STYLE_SCSS{/style}",
+    'style with unquoted layer' => '{style layer: theme.components}SFC_STYLE_LAYER_UNQUOTED{/style}',
+    'style with single-quoted layer' => "{style layer: 'components'}SFC_STYLE_LAYER_SINGLE_QUOTED{/style}",
+    'style with double-quoted layer' => '{style layer: "utilities"}SFC_STYLE_LAYER_DOUBLE_QUOTED{/style}',
+    'style with null layer and multiple properties' => "{style lang: 'scss', layer: null, lazy: false}SFC_STYLE_LAYER_NULL{/style}",
     'style with lazy flag' => '{style lazy}SFC_STYLE_LAZY_FLAG{/style}',
     'style with lazy true' => '{style lazy: true}SFC_STYLE_LAZY_TRUE{/style}',
     'style with lazy false' => '{style lazy: false}SFC_STYLE_LAZY_FALSE{/style}',
@@ -120,8 +124,8 @@ foreach ([
     'script with lazy flag' => '{script lazy}SFC_SCRIPT_LAZY_FLAG{/script}',
     'script with lazy true' => '{script lazy: true}SFC_SCRIPT_LAZY_TRUE{/script}',
     'script with lazy false' => '{script lazy: false}SFC_SCRIPT_LAZY_FALSE{/script}',
-    'style with ignored properties' => "{style scoped: true, media: 'print', lang: 'scss', lang: 'css'}SFC_STYLE_PROPERTIES{/style}",
-    'script with ignored positional property' => "{script 'module', defer: true, source: \$source}SFC_SCRIPT_PROPERTIES{/script}",
+    'style with ignored properties' => "{style scoped: true, media: 'print', lang: 'scss'}SFC_STYLE_PROPERTIES{/style}",
+    'script with ignored positional properties' => "{script 'module', 'lazy', defer: true, source: \$source}SFC_SCRIPT_PROPERTIES{/script}",
 ] as $label => $block) {
     assertSameValue($label, '<main>Visible</main>', renderSfcTemplate('<main>Visible</main>' . $block));
 }
@@ -153,6 +157,10 @@ assertNotContains('compiled template does not index style markers', StyleNode::B
 assertNotContains('compiled template does not index script markers', ScriptNode::BlockName . '_0', $metadataTemplate);
 assertNotContains('compiled template does not render style metadata blocks', "renderBlock('" . StyleNode::BlockName, $metadataTemplate);
 assertNotContains('compiled template does not render script metadata blocks', "renderBlock('" . ScriptNode::BlockName, $metadataTemplate);
+
+$quotedLazyTemplate = compileSfcTemplate("{style 'lazy'}a{/style}");
+assertContains('quoted lazy remains an eager style', StyleNode::EagerBlockName, $quotedLazyTemplate);
+assertNotContains('quoted lazy does not create a lazy style marker', StyleNode::LazyBlockName, $quotedLazyTemplate);
 
 $dependencies = collectSfcDependencies([
     'main' => '{include file "style"}{include file "script"}{include file "both"}{include file "plain"}{include file "style"}',
@@ -535,15 +543,57 @@ assertThrows(
 );
 
 assertThrows(
-    'quoted lazy flag is rejected',
-    'must be a bare flag or a static boolean',
-    fn() => compileSfcTemplate("{style 'lazy'}a{/style}"),
-);
-
-assertThrows(
     'duplicate lazy is rejected',
     'must not be declared more than once',
     fn() => compileSfcTemplate('{script lazy, lazy: true}a(){/script}'),
+);
+
+assertThrows(
+    'duplicate lang is rejected',
+    'must not be declared more than once',
+    fn() => compileSfcTemplate("{style lang: 'scss', lang: 'css'}a{/style}"),
+);
+
+assertThrows(
+    'dynamic layer is rejected',
+    'must be a static string or null',
+    fn() => compileSfcTemplate('{style layer: $layer}a{/style}'),
+);
+
+assertThrows(
+    'boolean layer is rejected',
+    'must be a static string or null',
+    fn() => compileSfcTemplate('{style layer: true}a{/style}'),
+);
+
+assertThrows(
+    'bare layer is rejected',
+    'must have a value',
+    fn() => compileSfcTemplate('{style layer}a{/style}'),
+);
+
+assertThrows(
+    'bare lang is rejected',
+    'must have a value',
+    fn() => compileSfcTemplate('{style lang}a{/style}'),
+);
+
+assertThrows(
+    'unsupported bare properties are rejected',
+    'scoped property in {style} must have a value',
+    fn() => compileSfcTemplate('{style scoped}a{/style}'),
+);
+
+assertThrows(
+    'duplicate layer is rejected',
+    'must not be declared more than once',
+    fn() => compileSfcTemplate('{style layer: components, layer: utilities}a{/style}'),
+);
+
+assertThrows(
+    'script layer is rejected',
+    'only supported in {style}',
+    fn() => compileSfcTemplate('{script layer: components}a(){/script}'),
 );
 
 echo "All SFC extension tests passed.\n";

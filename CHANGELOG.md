@@ -6,8 +6,6 @@
 - opt-in SFC `{style}` and `{script}` tags via the `extensions.sfc` option
 - opt-in runtime template dependency tracking with loading-aware `filesWithStyle()` and `filesWithScript()` methods via the `extensions.templateDependencies` option
 - opt-in raw `{php ...}` tags via the `extensions.rawPhp` option
-- static `lazy` properties for `{style}` and `{script}` tags
-- public generic, eager, and lazy SFC metadata block-name constants on `ScriptNode` and `StyleNode`
 
 ### Changed
 - replace `LatteExtension` with `BaristaExtension`
