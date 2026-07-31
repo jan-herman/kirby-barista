@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 use JanHerman\Barista\Latte\SfcExtension;
-use JanHerman\Barista\Latte\TemplateDependencies;
+use JanHerman\Barista\Latte\TemplateDependenciesExtension;
 use JanHerman\Barista\Latte\Nodes\ScriptNode;
 use JanHerman\Barista\Latte\Nodes\StyleNode;
 use Latte\Engine;
@@ -47,9 +47,9 @@ function renderSfcTemplate(string $template): string
 /**
  * @param array<string, string> $templates
  */
-function collectSfcDependencies(array $templates): TemplateDependencies
+function collectSfcDependencies(array $templates): TemplateDependenciesExtension
 {
-    $dependencies = new TemplateDependencies();
+    $dependencies = new TemplateDependenciesExtension();
     $latte = new Engine();
     $latte->addExtension(new SfcExtension());
     $latte->addExtension($dependencies);

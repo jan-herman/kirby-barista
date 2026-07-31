@@ -30,7 +30,7 @@
         "test": [
             "php tests/ExtensionsTest.php",
             "php tests/SfcExtensionTest.php",
-            "php tests/TemplateDependenciesTest.php"
+            "php tests/TemplateDependenciesExtensionTest.php"
         ]
     },
     "autoload": {

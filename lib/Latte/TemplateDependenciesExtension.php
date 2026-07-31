@@ -12,7 +12,7 @@ use Latte\Runtime\Template;
 /**
  * Collects the templates rendered by Latte and their runtime dependencies.
  */
-class TemplateDependencies extends Extension
+class TemplateDependenciesExtension extends Extension
 {
     /** @var Template[] */
     protected array $templates = [];

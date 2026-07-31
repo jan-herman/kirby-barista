@@ -4,7 +4,7 @@ use JanHerman\Barista\Barista;
 use JanHerman\Barista\Latte\BaristaExtension;
 use JanHerman\Barista\Latte\CoreFiltersExtension;
 use JanHerman\Barista\Latte\SfcExtension;
-use JanHerman\Barista\Latte\TemplateDependencies;
+use JanHerman\Barista\Latte\TemplateDependenciesExtension;
 use Kirby\Cms\App;
 use Latte\Bridges\Tracy\TracyExtension;
 use Latte\Engine;
@@ -247,7 +247,7 @@ assertSameValue(
 
 foreach (array_keys(defaultExtensionOptions()) as $name) {
     $replacement = $name === 'templateDependencies'
-        ? new TemplateDependencies()
+        ? new TemplateDependenciesExtension()
         : new RegistryTestExtension();
     $receivedKirby = null;
     $kirby = createKirby([
@@ -313,7 +313,7 @@ assertSameValue(
         TranslatorExtension::class,
         CoreFiltersExtension::class,
         SfcExtension::class,
-        TemplateDependencies::class,
+        TemplateDependenciesExtension::class,
         RawPhpExtension::class,
         RegistryTestExtension::class,
         RegistryTestExtension::class,
@@ -364,7 +364,7 @@ assertSameValue(
     'removed top-level options do not enable extensions',
     false,
     in_array(SfcExtension::class, extensionClasses($legacyLatte), true)
-    || in_array(TemplateDependencies::class, extensionClasses($legacyLatte), true),
+    || in_array(TemplateDependenciesExtension::class, extensionClasses($legacyLatte), true),
 );
 
 assertThrows(
@@ -396,7 +396,7 @@ assertThrows(
 assertThrows(
     'template dependencies replacement preserves the collector contract',
     UnexpectedValueException::class,
-    TemplateDependencies::class,
+    TemplateDependenciesExtension::class,
     static fn () => registerConfiguredExtensions([
         'templateDependencies' => static fn (App $kirby): Extension => new RegistryTestExtension(),
     ]),

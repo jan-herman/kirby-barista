@@ -5,7 +5,7 @@ namespace JanHerman\Barista;
 use JanHerman\Barista\Latte\FileLoader;
 use JanHerman\Barista\Latte\BaristaExtension;
 use JanHerman\Barista\Latte\CoreFiltersExtension;
-use JanHerman\Barista\Latte\TemplateDependencies;
+use JanHerman\Barista\Latte\TemplateDependenciesExtension;
 use JanHerman\Barista\Latte\SfcExtension;
 use JanHerman\Barista\Latte\Translator;
 use Kirby\Cms\App as Kirby;
@@ -30,7 +30,7 @@ class Barista
     protected bool $isTracyInstalled;
     protected string $cacheDirectory;
     protected LatteEngine $latte;
-    protected ?TemplateDependencies $templateDependencies = null;
+    protected ?TemplateDependenciesExtension $templateDependencies = null;
 
     /**
      * Initializes Barista and its Latte engine.
@@ -77,7 +77,7 @@ class Barista
         string $file,
         object|array $params = [],
         ?string $block = null,
-    ): TemplateDependencies
+    ): TemplateDependenciesExtension
     {
         $dependencies = $this->templateDependencies();
         $dependencies->reset();
@@ -89,7 +89,7 @@ class Barista
     /**
      * Returns the collector for rendered template dependencies.
      */
-    public function templateDependencies(): TemplateDependencies
+    public function templateDependencies(): TemplateDependenciesExtension
     {
         if ($this->templateDependencies === null) {
             throw new \LogicException(
@@ -203,15 +203,15 @@ class Barista
 
             if (
                 $name === 'templateDependencies'
-                && !$extension instanceof TemplateDependencies
+                && !$extension instanceof TemplateDependenciesExtension
             ) {
                 throw new UnexpectedValueException(
                     'The jan-herman.barista.extensions.templateDependencies factory must return an instance of '
-                    . TemplateDependencies::class . '.',
+                    . TemplateDependenciesExtension::class . '.',
                 );
             }
 
-            if ($extension instanceof TemplateDependencies) {
+            if ($extension instanceof TemplateDependenciesExtension) {
                 $this->templateDependencies = $extension;
             }
 
@@ -236,7 +236,7 @@ class Barista
             },
             'coreFilters' => static fn (Kirby $kirby): LatteExtension => new CoreFiltersExtension(),
             'sfc' => static fn (Kirby $kirby): LatteExtension => new SfcExtension(),
-            'templateDependencies' => static fn (Kirby $kirby): LatteExtension => new TemplateDependencies(),
+            'templateDependencies' => static fn (Kirby $kirby): LatteExtension => new TemplateDependenciesExtension(),
             'tracy' => $this->isTracyInstalled
                 ? static fn (Kirby $kirby): LatteExtension => new TracyExtension()
                 : null,
