@@ -100,12 +100,12 @@ function assertThrows(string $label, string $expectedMessage, callable $callback
     exit(1);
 }
 
-assertSameValue('script block name constant', '__sfc_script', ScriptNode::BlockName);
-assertSameValue('eager script block name constant', '__sfc_script_eager', ScriptNode::EagerBlockName);
-assertSameValue('lazy script block name constant', '__sfc_script_lazy', ScriptNode::LazyBlockName);
-assertSameValue('style block name constant', '__sfc_style', StyleNode::BlockName);
-assertSameValue('eager style block name constant', '__sfc_style_eager', StyleNode::EagerBlockName);
-assertSameValue('lazy style block name constant', '__sfc_style_lazy', StyleNode::LazyBlockName);
+assertSameValue('script block name constant', '__sfcScript', ScriptNode::BlockName);
+assertSameValue('eager script block name constant', '__sfcScriptEager', ScriptNode::EagerBlockName);
+assertSameValue('lazy script block name constant', '__sfcScriptLazy', ScriptNode::LazyBlockName);
+assertSameValue('style block name constant', '__sfcStyle', StyleNode::BlockName);
+assertSameValue('eager style block name constant', '__sfcStyleEager', StyleNode::EagerBlockName);
+assertSameValue('lazy style block name constant', '__sfcStyleLazy', StyleNode::LazyBlockName);
 
 foreach ([
     'style without lang' => '{style}SFC_STYLE_DEFAULT{/style}',

@@ -4,9 +4,9 @@ namespace JanHerman\Barista\Latte\Nodes;
 
 class ScriptNode extends SfcNode
 {
-    public const BlockName = '__sfc_script';
-    public const EagerBlockName = '__sfc_script_eager';
-    public const LazyBlockName = '__sfc_script_lazy';
+    public const BlockName = '__sfcScript';
+    public const EagerBlockName = '__sfcScriptEager';
+    public const LazyBlockName = '__sfcScriptLazy';
 
     protected const Languages = ['js', 'ts'];
 }
