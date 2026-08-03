@@ -134,6 +134,8 @@ class Barista
     protected function configureLatteFeatures(LatteEngine $latte): void
     {
         $latte->setFeature(Feature::StrictTypes, $this->getOption('strictTypes', false));
+        $latte->setFeature(Feature::StrictParsing, $this->getOption('strictParsing', false));
+        $latte->setFeature(Feature::MigrationWarnings, $this->getOption('migrationWarnings', false));
         $latte->setFeature(Feature::ScopedLoopVariables, $this->getOption('scopedLoopVariables', true));
         $latte->setFeature(Feature::Dedent, $this->getOption('dedent', true));
         $latte->setAutoRefresh($this->getOption('autoRefresh', true));

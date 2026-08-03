@@ -3,9 +3,10 @@
 ## Unreleased
 ### Added
 - configurable Latte extension registry via the `extensions` option
+- opt-in raw `{php ...}` tags via the `extensions.rawPhp` option
+- missing plugin options for `strictParsing` & `migrationWarnings` Latte features
 - opt-in SFC `{style}` and `{script}` tags via the `extensions.sfc` option
 - opt-in runtime template dependency tracking with loading-aware `filesWithStyle()` and `filesWithScript()` methods via the `extensions.templateDependencies` option
-- opt-in raw `{php ...}` tags via the `extensions.rawPhp` option
 
 ### Changed
 - replace `LatteExtension` with `BaristaExtension`
@@ -23,7 +24,7 @@
     - rename snake_cased variables to camelCase
 
 ### Fixed
-- added missing supoprt for `{_'message.key', 'fallback'}` translation syntax
+- added missing support for `{_'message.key', 'fallback'}` translation syntax
 - added missing cache for snippet file resolver
 
 
