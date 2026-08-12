@@ -89,6 +89,6 @@ function barista()
 function safe_html($html): Html
 {
     $safeHtml = SaneHtml::sanitize($html);
-    $safeHtml = str_replace('&amp;nbsp;', '&nbsp;', $safeHtml);
+    $safeHtml = str_replace(['&amp;nbsp;', "\u{00A0}"], '&nbsp;', $safeHtml);
     return new Html($safeHtml);
 }
