@@ -5,8 +5,9 @@
 - configurable Latte extension registry via the `extensions` option
 - opt-in raw `{php ...}` tags via the `extensions.rawPhp` option
 - missing plugin options for `strictParsing` & `migrationWarnings` Latte features
-- opt-in SFC `{style}` and `{script}` tags via the `extensions.sfc` option
-- opt-in runtime template dependency tracking with loading-aware `filesWithStyle()` and `filesWithScript()` methods via the `extensions.templateDependencies` option
+- `LatteSfc` module
+    - opt-in SFC `{style}` and `{script}` tags via the `extensions.sfc` option
+    - opt-in runtime template dependency tracking with loading-aware `filesWithStyle()` and `filesWithScript()` methods via the `extensions.templateDependencies` option
 
 ### Changed
 - replace `LatteExtension` with `BaristaExtension`

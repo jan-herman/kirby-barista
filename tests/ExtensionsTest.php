@@ -3,8 +3,8 @@
 use JanHerman\Barista\Barista;
 use JanHerman\Barista\Latte\BaristaExtension;
 use JanHerman\Barista\Latte\CoreFiltersExtension;
-use JanHerman\Barista\Latte\SfcExtension;
-use JanHerman\Barista\Latte\TemplateDependenciesExtension;
+use JanHerman\Barista\LatteSfc\SfcExtension;
+use JanHerman\Barista\LatteSfc\TemplateDependenciesExtension;
 use Kirby\Cms\App;
 use Latte\Bridges\Tracy\TracyExtension;
 use Latte\Engine;

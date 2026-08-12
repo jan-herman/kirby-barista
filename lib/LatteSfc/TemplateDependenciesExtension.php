@@ -1,11 +1,11 @@
 <?php
 
-namespace JanHerman\Barista\Latte;
+namespace JanHerman\Barista\LatteSfc;
 
 use Closure;
 use InvalidArgumentException;
-use JanHerman\Barista\Latte\Nodes\ScriptNode;
-use JanHerman\Barista\Latte\Nodes\StyleNode;
+use JanHerman\Barista\LatteSfc\Nodes\ScriptNode;
+use JanHerman\Barista\LatteSfc\Nodes\StyleNode;
 use Latte\Extension;
 use Latte\Runtime\Template;
 

@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-use JanHerman\Barista\Latte\SfcExtension;
-use JanHerman\Barista\Latte\TemplateDependenciesExtension;
-use JanHerman\Barista\Latte\Nodes\ScriptNode;
-use JanHerman\Barista\Latte\Nodes\StyleNode;
+use JanHerman\Barista\LatteSfc\Nodes\ScriptNode;
+use JanHerman\Barista\LatteSfc\Nodes\StyleNode;
+use JanHerman\Barista\LatteSfc\SfcExtension;
+use JanHerman\Barista\LatteSfc\TemplateDependenciesExtension;
 use Latte\Engine;
 use Latte\Loaders\StringLoader;
 use Latte\Runtime\Template;

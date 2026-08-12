@@ -1,6 +1,6 @@
 <?php
 
-namespace JanHerman\Barista\Latte\Nodes;
+namespace JanHerman\Barista\LatteSfc\Nodes;
 
 use Generator;
 use Latte\CompileException;
