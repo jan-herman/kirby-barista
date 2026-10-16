@@ -75,7 +75,10 @@ Kirby::plugin('jan-herman/barista', [
                 return '';
             }
 
-            return safe_html($field->value);
+            return new Html(kirby()->apply('jan-herman.barista.toHtml:after', [
+                'html' => (string) safe_html($field->value),
+                'field' => $field,
+            ], 'html'));
         }
     ]
 ]);

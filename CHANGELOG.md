@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.18.0] - 2026-10-16
+### Added
+- `jan-herman.barista.toHtml:after` hook for formatting sanitized field HTML
+
+
 ## [1.17.0] - 2026-08-20
 ### Added
 - configurable Latte extension registry via the `extensions` option
